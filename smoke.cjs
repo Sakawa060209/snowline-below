@@ -84,13 +84,25 @@ async function combine(page, clueIds) {
   if (!count.includes("10 / 10")) throw new Error(`Expected 10/10 evidence, got ${count}`);
   if (!await page.locator('[data-section="final"]:not(.locked)').count()) throw new Error("Final investigation did not unlock");
 
+  await click(page, '[data-section="web"]');
+  await click(page, '[data-keyword="红围巾 白岭"]');
+  await click(page, '[data-section="archive"]');
+  await click(page, '[data-doc="envelope"]');
+  await click(page, '[data-hidden="H02"]');
+  await click(page, ".modal-close");
+  await click(page, '[data-section="final"]');
+  for (const id of ["facility", "linxue", "guowen"]) await click(page, `[data-final-choice="${id}"]`);
+  await click(page, "[data-resolve-final]");
+  const ending = await page.locator(".ending h2").textContent();
+  if (!ending.includes("雪线以下")) throw new Error(`Expected true ending, got ${ending}`);
+
   await page.screenshot({ path: path.join(root, "smoke-desktop.png"), fullPage: true });
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await mobile.goto(url);
   await mobile.screenshot({ path: path.join(root, "smoke-mobile.png"), fullPage: true });
 
   if (errors.length) throw new Error(errors.join("\n"));
-  console.log(JSON.stringify({ ok: true, evidence: count.trim(), desktop: "smoke-desktop.png", mobile: "smoke-mobile.png" }));
+  console.log(JSON.stringify({ ok: true, evidence: count.trim(), ending: ending.trim(), desktop: "smoke-desktop.png", mobile: "smoke-mobile.png" }));
   await browser.close();
 })().catch(async err => {
   console.error(err.stack || err);
