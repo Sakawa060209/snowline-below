@@ -29,6 +29,15 @@ npx serve .
 
 也可直接双击 `index.html` 游玩。
 
+## 流程测试
+
+`smoke.cjs` 默认测试本地文件，并优先使用 Playwright 自带 Chromium；可通过 `BROWSER_PATH` 指定浏览器，通过 `LIVE_URL` 对部署后的网页执行同一套流程。
+
+```bash
+node smoke.cjs
+LIVE_URL=https://sakawa060209.github.io/snowline-below/ node smoke.cjs
+```
+
 ## 美术
 
 主视觉、2000 班级照、2001 营地照、2003 纪录片底片和 1976 气象站合影由 OpenAI ImageGen 为本项目生成；其余界面由 HTML/CSS 绘制。

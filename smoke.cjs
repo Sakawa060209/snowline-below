@@ -1,8 +1,9 @@
 const { chromium } = require("playwright");
 const path = require("path");
+const fs = require("fs");
 
 const root = __dirname;
-const url = `file:///${path.join(root, "index.html").replace(/\\/g, "/")}`;
+const url = process.env.LIVE_URL || `file:///${path.join(root, "index.html").replace(/\\/g, "/")}`;
 
 async function click(page, selector) {
   await page.locator(selector).first().evaluate(element => element.click());
@@ -42,10 +43,9 @@ async function inspectPerson(page, id, clue) {
 }
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    executablePath: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
-  });
+  const fallbackEdge = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+  const browserPath = process.env.BROWSER_PATH || (fs.existsSync(fallbackEdge) ? fallbackEdge : null);
+  const browser = await chromium.launch({ headless: true, ...(browserPath ? { executablePath: browserPath } : {}) });
   const page = await browser.newPage({ viewport: { width: 1440, height: 950 } });
   page.setDefaultTimeout(5000);
   const errors = [];
@@ -95,13 +95,14 @@ async function inspectPerson(page, id, clue) {
 
   await openDoc(page, "weather", ["weather_record"]);
   await combine(page, ["snow_depth", "weather_record"]);
-  await openDoc(page, "memo", ["forecast_eight", "time_2004"]);
+  await openDoc(page, "memo", ["forecast_eight", "time_2004", "original_photo_time"]);
+  await combine(page, ["official_photo_time", "original_photo_time"]);
   await combine(page, ["forecast_eight", "footprints"]);
 
   await click(page, '[data-section="timeline"]');
   await click(page, '[data-compare-times]');
   await search(page, "白岭 19:47");
-  const afterTimeSearch = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v1")));
+  const afterTimeSearch = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!afterTimeSearch.clues.includes("repeated_time")) throw new Error(`Time search failed: ${JSON.stringify(afterTimeSearch.searches)}`);
   await combine(page, ["case_times", "repeated_time"]);
 
@@ -120,8 +121,8 @@ async function inspectPerson(page, id, clue) {
   await click(page, '[data-section="photos"]');
   await click(page, '[data-clue="photo_1976_boy"]');
   await click(page, '[data-compare-1976]');
-  const hypothesisState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v1")));
-  for (const id of ["HX01", "HX02", "S01"]) if (!hypothesisState.hypotheses.includes(id)) throw new Error(`Missing hypothesis ${id}`);
+  const hypothesisState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  for (const id of ["HX01", "HX02", "S01", "S02"]) if (!hypothesisState.hypotheses.includes(id)) throw new Error(`Missing hypothesis ${id}`);
   for (const id of ["HX01", "HX02"]) if (!hypothesisState.overturned.includes(id)) throw new Error(`Hypothesis ${id} was not overturned`);
   await page.evaluate(() => document.querySelectorAll(".toast").forEach(node => node.remove()));
   await page.screenshot({ path: path.join(root, "smoke-photos.png"), fullPage: true });
@@ -143,17 +144,71 @@ async function inspectPerson(page, id, clue) {
   const ending = await page.locator(".ending h2").textContent();
   if (!ending.includes("雪线以下")) throw new Error(`Expected true ending, got ${ending}`);
   if (await page.locator(".ending-tail").count() !== 3) throw new Error("Expected one ending tail for each final action");
+  if (!(await page.locator("#investigator-label").textContent()).includes("郭文")) throw new Error("True ending did not replace the investigator name");
 
   const guard = await browser.newPage({ viewport: { width: 900, height: 700 } });
   let sawConfirm = false;
   await guard.goto(url);
-  await guard.evaluate(key => localStorage.setItem(key, JSON.stringify({ version: 1, evidence: ["EV01"] })), "snowline-below-save-v1");
+  await guard.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem("snowline-below-save-v1", JSON.stringify({ version: 1, evidence: ["EV01"], ending: "true", finalChoices: ["publish"] }));
+  });
   await guard.reload();
+  const migrated = await guard.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (migrated.version !== 2 || !migrated.evidence.includes("EV01") || migrated.ending || migrated.finalChoices.length) throw new Error("Version 1 save migration failed");
   guard.on("dialog", async dialog => { sawConfirm = true; await dialog.dismiss(); });
   await click(guard, "#new-game");
   if (!sawConfirm) throw new Error("Starting a new investigation did not request confirmation");
   if (!await guard.locator("#title-screen").isVisible()) throw new Error("Dismissing new-game confirmation still erased progress");
   await guard.close();
+
+  const logicContext = await browser.newContext({ viewport: { width: 1100, height: 800 } });
+  const logic = await logicContext.newPage();
+  logic.setDefaultTimeout(5000);
+  await logic.goto(url);
+  await logic.evaluate(() => localStorage.setItem("snowline-below-save-v2", JSON.stringify({
+    version: 2,
+    section: "evidence",
+    clues: ["ame_report", "extra_member"],
+    hidden: ["H01"],
+    hypotheses: [],
+    overturned: []
+  })));
+  await logic.reload();
+  await click(logic, "#continue-game");
+  await click(logic, '[data-select-clue="ame_report"]');
+  await click(logic, '[data-select-clue="extra_member"]');
+  await click(logic, "[data-combine]");
+  const blockedHypothesis = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (blockedHypothesis.hypotheses.includes("HX02")) throw new Error("Contradicted HX02 was created after H01");
+
+  await logic.evaluate(() => localStorage.setItem("snowline-below-save-v2", JSON.stringify({
+    version: 2,
+    section: "final",
+    unlockedSystems: ["photos", "evidence", "timeline", "web", "final"],
+    unlockedDocs: [],
+    evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV16", "EV18"],
+    clues: ["photo_seventh", "guowen_red_scarf"],
+    hidden: [],
+    finalChoices: []
+  })));
+  await logic.reload();
+  await click(logic, "#continue-game");
+  await click(logic, '[data-final-choice="1976"]');
+  await click(logic, '[data-complete-final="1976"]');
+  await click(logic, '[data-close-modal]');
+  let rescueState = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (rescueState.hidden.includes("H01") || !rescueState.unlockedDocs.includes("photo1976")) throw new Error("1976 final action should unlock the photo without granting H01");
+  await click(logic, '[data-final-choice="guowen"]');
+  await click(logic, '[data-complete-final="guowen"]');
+  if ((await logic.locator(".action-result").innerText()).includes("1976")) throw new Error("Guowen action leaked 1976 without H01");
+  await click(logic, '[data-close-modal]');
+  await click(logic, '[data-section="photos"]');
+  await click(logic, '[data-clue="photo_1976_boy"]');
+  await click(logic, '[data-compare-1976]');
+  rescueState = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (!rescueState.hidden.includes("H01")) throw new Error("1976 rescue flow did not grant H01 after manual comparison");
+  await logicContext.close();
 
   await page.screenshot({ path: path.join(root, "smoke-desktop.png"), fullPage: true });
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -176,6 +231,8 @@ async function inspectPerson(page, id, clue) {
   await click(mobile, '[data-section="photos"]');
   await mobile.locator(".photo-frame").first().evaluate(el => el.click());
   if (!await mobile.locator(".mobile-photo-expanded").count()) throw new Error("Mobile photo did not open fullscreen inspection");
+  const mobileBackgroundSize = await mobile.locator(".mobile-photo-expanded .photo-frame").evaluate(el => getComputedStyle(el).backgroundSize);
+  if (mobileBackgroundSize !== "contain") throw new Error(`Mobile evidence photo is cropped: ${mobileBackgroundSize}`);
   await click(mobile, '.mobile-photo-expanded [data-clue="footprints"]');
   await click(mobile, '[data-close-modal]');
   await click(mobile, "#mobile-menu");

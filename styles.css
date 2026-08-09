@@ -124,6 +124,13 @@ button { color: inherit; }
 .person-card small { color: var(--muted); }
 .person-card .status { display: block; margin-top: 13px; color: var(--faint); font: 10px ui-monospace, monospace; }
 .person-card .status.missing { color: #ba5c57; }
+.person-card.investigated { border-left-color: var(--red-light); }
+.investigation-mark { display: block; margin-top: 10px; color: #b45b56; font: 9px ui-monospace, monospace; font-style: normal; }
+.investigation-note { margin-top: 20px; padding: 14px; border-left: 2px solid var(--red); background: rgba(167,43,43,.07); }
+.investigation-note.pending { border-left-color: var(--line); background: rgba(255,255,255,.02); }
+.investigation-note small, .investigation-note b { display: block; margin-bottom: 7px; }
+.investigation-note small { color: var(--faint); font: 9px ui-monospace, monospace; letter-spacing: .1em; }
+.investigation-note p { margin-bottom: 0; color: var(--muted); }
 
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 20px; }
 .photo-card { border: 1px solid var(--line); background: #111719; padding: 12px; cursor: pointer; }
@@ -231,7 +238,7 @@ button { color: inherit; }
 .hypothesis-card { border-style: dashed; }
 .hypothesis-card.overturned { opacity: .55; text-decoration: line-through; }
 .mobile-photo-expanded { width: min(1100px, 92vw); }
-.mobile-photo-expanded .photo-frame { min-height: 52vh; background-size: cover; }
+.mobile-photo-expanded .photo-frame { min-height: 52vh; background-color: #020405; background-size: contain; background-repeat: no-repeat; background-position: center; }
 .mobile-photo-expanded .hotspot { width: 56px; height: 56px; }
 
 .modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 25px; }
