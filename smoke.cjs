@@ -65,7 +65,7 @@ async function loadSave(page, partial) {
 
   await openDoc(page, "passengers", ["passenger_count", "seat_gap"]);
   await inspectPerson(page, "guowen", "guowen_identity");
-  await combine(page, ["guowen_identity", "seat_gap"]);
+  await combine(page, ["passenger_count", "seat_gap"]);
   for (const [id, clue] of [
     ["linxue", "link_linxue"], ["zhou", "link_zhou"], ["luo", "link_luo"], ["han", "link_han"],
     ["lu", "link_lu"], ["tang", "link_tang"], ["gu", "link_gu"], ["qiu", "link_qiu"]
@@ -83,11 +83,15 @@ async function loadSave(page, partial) {
   await openDoc(page, "physical", ["health_guowen"]);
   await combine(page, ["leave_count", "missing17", "health_guowen"]);
 
-  await openDoc(page, "camp", ["five_cups", "time_2001"]);
+  await openDoc(page, "camp", ["five_cups", "camp_five_depressions", "time_2001"]);
+  await click(page, '[data-section="cases"]');
+  await click(page, '[data-case="01"]');
+  if (!(await page.locator(".case-discoveries").innerText()).includes("旁证")) throw new Error("2001 supplemental finding was not separated from core evidence");
+  await click(page, ".modal-close");
   await openDoc(page, "supplies", ["four_supplies"]);
   await combine(page, ["five_cups", "four_supplies"]);
 
-  await openDoc(page, "crew", ["team_six", "time_2003"]);
+  await openDoc(page, "crew", ["team_six", "meal_seven", "time_2003"]);
   await click(page, '[data-section="photos"]');
   await click(page, '[data-clue="class_red_scarf"]');
   await click(page, '[data-clue="photo_seventh"]');
@@ -99,6 +103,8 @@ async function loadSave(page, partial) {
   await click(page, '[data-doc="passengers"]');
   await click(page, '[data-hidden="H03"]');
   await click(page, ".modal-close");
+  await search(page, "许 白岭 2004");
+  if (!(await page.locator(".search-result").first().innerText()).includes("2004-12-18")) throw new Error("The erased Xu passenger cache was not recovered");
 
   await openDoc(page, "weather", ["weather_record"]);
   await combine(page, ["snow_depth", "weather_record"]);
@@ -140,6 +146,15 @@ async function loadSave(page, partial) {
   const hidden = await page.locator("#hidden-count").textContent();
   if (hidden.trim() !== "3") throw new Error(`Expected 3 anomaly files without a disclosed total, got ${hidden}`);
   await click(page, '[data-section="cases"]');
+  if (!(await page.locator('[data-case="05"]').innerText()).includes("失联人员：3")) throw new Error("Main flow did not preserve CASE05 stage 2 before the final threshold");
+  await click(page, "[data-confirm-final]");
+  if (!await page.locator("[data-start-final]").count()) throw new Error("Final threshold did not require a second confirmation");
+  let preFinalState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (preFinalState.finalStarted) throw new Error("Opening final confirmation already froze the investigation");
+  await click(page, "[data-close-modal]");
+  preFinalState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (preFinalState.finalStarted) throw new Error("Cancelling final confirmation froze the investigation");
+  await click(page, "[data-confirm-final]");
   await click(page, "[data-start-final]");
   for (const id of ["1976", "han", "witness"]) {
     await click(page, `[data-final-choice="${id}"]`);
@@ -177,16 +192,35 @@ async function loadSave(page, partial) {
   logic.setDefaultTimeout(5000);
   logic.setDefaultNavigationTimeout(20000);
   await logic.goto(url, { waitUntil: "domcontentloaded" });
+  await loadSave(logic, {
+    section: "evidence",
+    unlockedCases: ["04", "05"],
+    case05Stage: 0,
+    evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"],
+    clues: ["case_times", "repeated_time", "ame_report", "extra_member", "facility"]
+  });
+  await click(logic, '[data-select-clue="case_times"]');
+  await click(logic, '[data-select-clue="repeated_time"]');
+  await click(logic, "[data-combine]");
+  let stagedCase = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (stagedCase.case05Stage !== 1) throw new Error(`CASE05 skipped stage 1 after EV16: ${stagedCase.case05Stage}`);
+  await click(logic, '[data-select-clue="ame_report"]');
+  await click(logic, '[data-select-clue="extra_member"]');
+  await click(logic, '[data-select-clue="facility"]');
+  await click(logic, "[data-combine]");
+  stagedCase = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (stagedCase.case05Stage !== 2) throw new Error(`CASE05 did not advance to stage 2 on a later event: ${stagedCase.case05Stage}`);
+
   for (const checkpoint of [
-    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], text: "系统正在建立档案" },
-    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV15"], text: "失联人员：1" },
-    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV16"], text: "失联人员：3" }
+    { stage: 0, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], text: "系统正在建立档案" },
+    { stage: 1, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV15"], text: "失联人员：1" },
+    { stage: 2, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV16"], text: "失联人员：3" }
   ]) {
-    await loadSave(logic, { section: "cases", unlockedCases: ["04", "05"], evidence: checkpoint.evidence });
+    await loadSave(logic, { section: "cases", unlockedCases: ["04", "05"], case05Stage: checkpoint.stage, evidence: checkpoint.evidence });
     if (!(await logic.locator('[data-case="05"]').innerText()).includes(checkpoint.text)) throw new Error(`CASE05 narrative checkpoint missing: ${checkpoint.text}`);
-    if (!await logic.locator("[data-start-final]").count()) throw new Error("CASE05 did not expose the voluntary final threshold");
+    if (!await logic.locator("[data-confirm-final]").count()) throw new Error("CASE05 did not expose the voluntary final threshold");
   }
-  await loadSave(logic, { section: "people", unlockedCases: ["04", "05"], unlockedSystems: ["final"], finalStarted: true, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"] });
+  await loadSave(logic, { section: "people", unlockedCases: ["04", "05"], unlockedSystems: ["final"], case05Stage: 3, finalStarted: true, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"] });
   if (!(await logic.locator('[data-person="linchuan"] .status').innerText()).includes("待确认")) throw new Error("Final phase did not mark Linchuan as pending");
   await click(logic, '[data-person="linxue"]');
   await click(logic, '[data-clue="link_linxue"]');
@@ -197,9 +231,9 @@ async function loadSave(page, partial) {
     { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], title: "暴雪" },
     { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV18"], title: "实验记录" },
     { evidence: ["EV01", "EV10", "EV02", "EV04", "EV08", "EV16"], title: "第七人" },
-    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV08", "EV16", "EV18"], hidden: ["H01"], title: "第七人" }
+    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV08", "EV15", "EV16", "EV18"], hidden: ["H01"], hypotheses: ["S02"], title: "第七人" }
   ]) {
-    await loadSave(logic, { section: "final", unlockedCases: ["04", "05"], unlockedSystems: ["final"], finalStarted: true, evidence: tier.evidence, hidden: tier.hidden || [], finalChoices: ["han", "guowen", "seal"], ending: null });
+    await loadSave(logic, { section: "final", unlockedCases: ["04", "05"], unlockedSystems: ["final"], case05Stage: 3, finalStarted: true, evidence: tier.evidence, hidden: tier.hidden || [], hypotheses: tier.hypotheses || [], finalChoices: ["han", "guowen", "seal"], ending: null });
     await click(logic, "[data-resolve-final]");
     if (!(await logic.locator(".ending h2").innerText()).includes(tier.title)) throw new Error(`Truth tier unreachable: ${tier.title}`);
   }
@@ -248,6 +282,17 @@ async function loadSave(page, partial) {
   rescueState = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!rescueState.hidden.includes("H01")) throw new Error("1976 rescue flow did not grant H01 after manual comparison");
   await logicContext.close();
+
+  const metaContext = await browser.newContext({ viewport: { width: 900, height: 700 } });
+  const metaPage = await metaContext.newPage();
+  metaPage.setDefaultNavigationTimeout(20000);
+  await metaPage.goto(url, { waitUntil: "domcontentloaded" });
+  await metaPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"] })));
+  await metaPage.reload({ waitUntil: "domcontentloaded" });
+  await click(metaPage, "#new-game");
+  await click(metaPage, ".modal-close");
+  if ((await metaPage.locator("#hidden-label").innerText()).trim() !== "档案完成度") throw new Error("Meta completion did not persist into a new game");
+  await metaContext.close();
 
   await page.screenshot({ path: path.join(root, "smoke-desktop.png"), fullPage: true });
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });

@@ -132,6 +132,11 @@ button { color: inherit; }
 .investigation-note small, .investigation-note b { display: block; margin-bottom: 7px; }
 .investigation-note small { color: var(--faint); font: 9px ui-monospace, monospace; letter-spacing: .1em; }
 .investigation-note p { margin-bottom: 0; color: var(--muted); }
+.case-discoveries { margin: 22px 0; padding: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.02); }
+.case-discoveries h3 { margin-top: 0; }
+.discovery-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid rgba(92,108,111,.24); }
+.discovery-kind { min-width: 42px; color: #d06b64; font: 9px ui-monospace, monospace; letter-spacing: .08em; }
+.discovery-kind.support { color: #87a5a7; }
 
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 20px; }
 .photo-card { border: 1px solid var(--line); background: #111719; padding: 12px; cursor: pointer; }
