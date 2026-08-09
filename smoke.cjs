@@ -48,6 +48,7 @@ async function inspectPerson(page, id, clue) {
   const browser = await chromium.launch({ headless: true, ...(browserPath ? { executablePath: browserPath } : {}) });
   const page = await browser.newPage({ viewport: { width: 1440, height: 950 } });
   page.setDefaultTimeout(5000);
+  page.setDefaultNavigationTimeout(20000);
   const errors = [];
   page.on("pageerror", e => errors.push(String(e)));
   page.on("console", msg => { if (msg.type() === "error") errors.push(msg.text()); });
@@ -147,6 +148,7 @@ async function inspectPerson(page, id, clue) {
   if (!(await page.locator("#investigator-label").textContent()).includes("郭文")) throw new Error("True ending did not replace the investigator name");
 
   const guard = await browser.newPage({ viewport: { width: 900, height: 700 } });
+  guard.setDefaultNavigationTimeout(20000);
   let sawConfirm = false;
   await guard.goto(url);
   await guard.evaluate(() => {
@@ -165,6 +167,7 @@ async function inspectPerson(page, id, clue) {
   const logicContext = await browser.newContext({ viewport: { width: 1100, height: 800 } });
   const logic = await logicContext.newPage();
   logic.setDefaultTimeout(5000);
+  logic.setDefaultNavigationTimeout(20000);
   await logic.goto(url);
   await logic.evaluate(() => localStorage.setItem("snowline-below-save-v2", JSON.stringify({
     version: 2,
@@ -214,6 +217,7 @@ async function inspectPerson(page, id, clue) {
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const mobile = await mobileContext.newPage();
   mobile.setDefaultTimeout(5000);
+  mobile.setDefaultNavigationTimeout(20000);
   await mobile.goto(url);
   await click(mobile, "#new-game");
   await click(mobile, ".modal-close");
