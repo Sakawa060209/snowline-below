@@ -44,7 +44,7 @@ async function inspectPerson(page, id, clue) {
 
 async function loadSave(page, partial) {
   await page.evaluate(save => localStorage.setItem("snowline-below-save-v2", JSON.stringify({ version: 2, ...save })), partial);
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
   await click(page, "#continue-game");
 }
 
@@ -59,7 +59,7 @@ async function loadSave(page, partial) {
   page.on("pageerror", e => errors.push(String(e)));
   page.on("console", msg => { if (msg.type() === "error") errors.push(msg.text()); });
 
-  await page.goto(url);
+  await page.goto(url, { waitUntil: "domcontentloaded" });
   await click(page, "#new-game");
   await click(page, ".modal-close");
 
@@ -158,12 +158,12 @@ async function loadSave(page, partial) {
   const guard = await browser.newPage({ viewport: { width: 900, height: 700 } });
   guard.setDefaultNavigationTimeout(20000);
   let sawConfirm = false;
-  await guard.goto(url);
+  await guard.goto(url, { waitUntil: "domcontentloaded" });
   await guard.evaluate(() => {
     localStorage.clear();
     localStorage.setItem("snowline-below-save-v1", JSON.stringify({ version: 1, evidence: ["EV01"], ending: "true", finalChoices: ["publish"] }));
   });
-  await guard.reload();
+  await guard.reload({ waitUntil: "domcontentloaded" });
   const migrated = await guard.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (migrated.version !== 2 || !migrated.evidence.includes("EV01") || migrated.ending || migrated.finalChoices.length) throw new Error("Version 1 save migration failed");
   guard.on("dialog", async dialog => { sawConfirm = true; await dialog.dismiss(); });
@@ -176,7 +176,7 @@ async function loadSave(page, partial) {
   const logic = await logicContext.newPage();
   logic.setDefaultTimeout(5000);
   logic.setDefaultNavigationTimeout(20000);
-  await logic.goto(url);
+  await logic.goto(url, { waitUntil: "domcontentloaded" });
   for (const checkpoint of [
     { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], text: "系统正在建立档案" },
     { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV15"], text: "失联人员：1" },
@@ -212,7 +212,7 @@ async function loadSave(page, partial) {
     hypotheses: [],
     overturned: []
   })));
-  await logic.reload();
+  await logic.reload({ waitUntil: "domcontentloaded" });
   await click(logic, "#continue-game");
   await click(logic, '[data-select-clue="ame_report"]');
   await click(logic, '[data-select-clue="extra_member"]');
@@ -231,7 +231,7 @@ async function loadSave(page, partial) {
     hidden: [],
     finalChoices: []
   })));
-  await logic.reload();
+  await logic.reload({ waitUntil: "domcontentloaded" });
   await click(logic, "#continue-game");
   await click(logic, '[data-final-choice="1976"]');
   await click(logic, '[data-complete-final="1976"]');
@@ -254,7 +254,7 @@ async function loadSave(page, partial) {
   const mobile = await mobileContext.newPage();
   mobile.setDefaultTimeout(5000);
   mobile.setDefaultNavigationTimeout(20000);
-  await mobile.goto(url);
+  await mobile.goto(url, { waitUntil: "domcontentloaded" });
   await click(mobile, "#new-game");
   await click(mobile, ".modal-close");
   await click(mobile, "#mobile-menu");
