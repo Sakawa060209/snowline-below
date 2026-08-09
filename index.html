@@ -19,13 +19,13 @@
     <section class="title-copy">
       <p class="eyebrow">白岭连续失踪事件 · 非公开调查档案</p>
       <h1>雪线以下</h1>
-      <p class="subtitle">每次失踪之前，都不是先少一个人。</p>
-      <p class="subtitle accent">而是先多一个人。</p>
+      <p class="subtitle">九个人失踪。</p>
+      <p class="subtitle accent">雪地里只有八组脚印。</p>
       <div class="title-actions">
         <button id="new-game" class="btn primary">开始调查</button>
         <button id="continue-game" class="btn ghost" hidden>继续记录</button>
       </div>
-      <p class="content-note">建议佩戴耳机（本游戏无突发音效） · 含轻度心理恐怖内容</p>
+      <p class="content-note">建议使用桌面浏览器游玩 · 含心理恐怖与文字异常</p>
     </section>
     <div class="case-stamp">CASE FILE<br><b>BL-2004-1217</b><br>REOPENED 2005</div>
   </main>
@@ -48,8 +48,8 @@
       <nav id="nav"></nav>
       <div class="weather-card">
         <span>白岭气象</span>
-        <b>−18°C</b>
-        <small>暴雪预警 / 道路封闭</small>
+        <b id="weather-temp">−18°C</b>
+        <small id="weather-status">暴雪预警 / 山区道路管制</small>
       </div>
     </aside>
 
@@ -70,7 +70,6 @@
     <footer class="statusbar">
       <span>核心证据 <b id="evidence-count">0 / 10</b></span>
       <span>隐藏档案 <b id="hidden-count">0 / 3</b></span>
-      <span>未读更新 <b id="update-count">0</b></span>
       <button id="save-status" class="save-status" title="进度会自动保存在此浏览器">● 已自动存档</button>
     </footer>
   </div>
