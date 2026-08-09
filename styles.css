@@ -217,15 +217,22 @@ button { color: inherit; }
 .inspect-btn { display: inline-block; margin: 8px 4px; padding: 8px 12px; border: 1px solid #545956; background: rgba(255,255,255,.18); color: #252827; cursor: pointer; font: 12px sans-serif; }
 .inspect-btn:hover { background: rgba(167,43,43,.13); border-color: #842b2b; }
 .inspect-btn.found { opacity: .5; text-decoration: line-through; }
-.evidence-hit { display: inline; padding: 2px 4px; border: 0; border-bottom: 1px dotted #6e6258; background: rgba(255,255,255,.1); color: inherit; cursor: crosshair; font: inherit; }
-.evidence-hit:hover, .evidence-hit:focus-visible { background: rgba(167,43,43,.16); outline: 1px solid rgba(132,43,43,.45); }
-.evidence-hit.found { border-bottom-color: #7a2727; background: rgba(167,43,43,.08); }
+.evidence-hit { display: inline; padding: 0; border: 0; background: transparent; color: inherit; cursor: inherit; font: inherit; }
+.evidence-hit:hover, .evidence-hit:focus-visible { text-decoration: underline; text-decoration-color: rgba(87,62,55,.35); text-underline-offset: 3px; outline: 0; }
+.evidence-hit.found { background: transparent; }
+.detail-hints .evidence-hit { padding: 1px 3px; background: rgba(167,43,43,.08); box-shadow: inset 0 -1px rgba(126,45,40,.32); cursor: pointer; }
+.photo-info .evidence-hit { color: var(--faint); font: 9px ui-monospace, monospace; }
 .compare-panel { margin-top: 20px; padding: 18px; border: 1px solid var(--line); background: var(--panel); }
 .compare-panel h3 { margin: 0 0 8px; font: 400 16px "Noto Serif SC", serif; }
 .compare-panel p { color: var(--muted); font-size: 12px; }
 .selected-final { border-color: var(--red-light); background: rgba(167,43,43,.12); }
 .final-complete { opacity: .62; }
 .action-result { margin: 24px 0; padding: 20px; border-left: 2px solid var(--red); background: #0b1113; color: #bdc9ca; line-height: 1.9; }
+.hypothesis-card { border-style: dashed; }
+.hypothesis-card.overturned { opacity: .55; text-decoration: line-through; }
+.mobile-photo-expanded { width: min(1100px, 92vw); }
+.mobile-photo-expanded .photo-frame { min-height: 52vh; background-size: cover; }
+.mobile-photo-expanded .hotspot { width: 56px; height: 56px; }
 
 .modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 25px; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.78); backdrop-filter: blur(6px); }

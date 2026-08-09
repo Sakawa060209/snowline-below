@@ -57,6 +57,8 @@ async function inspectPerson(page, id, clue) {
   await click(page, ".modal-close");
 
   await openDoc(page, "passengers", ["passenger_count", "seat_gap"]);
+  await inspectPerson(page, "guowen", "guowen_identity");
+  await combine(page, ["guowen_identity", "seat_gap"]);
   for (const [id, clue] of [
     ["linxue", "link_linxue"], ["zhou", "link_zhou"], ["luo", "link_luo"], ["han", "link_han"],
     ["lu", "link_lu"], ["tang", "link_tang"], ["gu", "link_gu"], ["qiu", "link_qiu"]
@@ -64,19 +66,21 @@ async function inspectPerson(page, id, clue) {
   await click(page, '[data-section="photos"]');
   await click(page, '[data-clue="footprints"]');
   await click(page, '[data-clue="snow_depth"]');
+  await click(page, '[data-clue="official_photo_time"]');
+  await combine(page, ["snow_depth", "official_photo_time"]);
   await combine(page, ["passenger_count", "passenger_links"]);
   await combine(page, ["passenger_count", "footprints"]);
 
-  await openDoc(page, "leave", ["leave_count"]);
+  await openDoc(page, "leave", ["leave_count", "time_2000"]);
   await openDoc(page, "roster", ["missing17"]);
   await openDoc(page, "physical", ["health_guowen"]);
   await combine(page, ["leave_count", "missing17", "health_guowen"]);
 
-  await openDoc(page, "camp", ["five_cups"]);
+  await openDoc(page, "camp", ["five_cups", "time_2001"]);
   await openDoc(page, "supplies", ["four_supplies"]);
   await combine(page, ["five_cups", "four_supplies"]);
 
-  await openDoc(page, "crew", ["team_six"]);
+  await openDoc(page, "crew", ["team_six", "time_2003"]);
   await click(page, '[data-section="photos"]');
   await click(page, '[data-clue="class_red_scarf"]');
   await click(page, '[data-clue="photo_seventh"]');
@@ -91,11 +95,11 @@ async function inspectPerson(page, id, clue) {
 
   await openDoc(page, "weather", ["weather_record"]);
   await combine(page, ["snow_depth", "weather_record"]);
-  await openDoc(page, "memo", ["forecast_eight"]);
+  await openDoc(page, "memo", ["forecast_eight", "time_2004"]);
   await combine(page, ["forecast_eight", "footprints"]);
 
   await click(page, '[data-section="timeline"]');
-  await click(page, '[data-clue="case_times"]');
+  await click(page, '[data-compare-times]');
   await search(page, "白岭 19:47");
   const afterTimeSearch = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v1")));
   if (!afterTimeSearch.clues.includes("repeated_time")) throw new Error(`Time search failed: ${JSON.stringify(afterTimeSearch.searches)}`);
@@ -104,6 +108,7 @@ async function inspectPerson(page, id, clue) {
   await search(page, "AME-7");
   await search(page, "北山 地下设施");
   await openDoc(page, "ame", ["ame_report", "extra_member"]);
+  await combine(page, ["ame_report", "extra_member"]);
   await openDoc(page, "facility", ["facility"]);
   await combine(page, ["ame_report", "extra_member", "facility"]);
 
@@ -113,6 +118,11 @@ async function inspectPerson(page, id, clue) {
 
   await search(page, "红围巾 白岭");
   await click(page, '[data-section="photos"]');
+  await click(page, '[data-clue="photo_1976_boy"]');
+  await click(page, '[data-compare-1976]');
+  const hypothesisState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v1")));
+  for (const id of ["HX01", "HX02", "S01"]) if (!hypothesisState.hypotheses.includes(id)) throw new Error(`Missing hypothesis ${id}`);
+  for (const id of ["HX01", "HX02"]) if (!hypothesisState.overturned.includes(id)) throw new Error(`Hypothesis ${id} was not overturned`);
   await page.evaluate(() => document.querySelectorAll(".toast").forEach(node => node.remove()));
   await page.screenshot({ path: path.join(root, "smoke-photos.png"), fullPage: true });
   await click(page, '[data-section="archive"]');
@@ -124,11 +134,15 @@ async function inspectPerson(page, id, clue) {
   await click(page, '[data-section="final"]');
   for (const id of ["1976", "han", "facility"]) {
     await click(page, `[data-final-choice="${id}"]`);
+    if (await page.locator(".action-result").count()) throw new Error(`Final action ${id} leaked content before consumption`);
     await click(page, `[data-complete-final="${id}"]`);
+    if (!await page.locator(".action-result").count()) throw new Error(`Final action ${id} did not reveal after consumption`);
+    await click(page, '[data-close-modal]');
   }
   await click(page, "[data-resolve-final]");
   const ending = await page.locator(".ending h2").textContent();
   if (!ending.includes("雪线以下")) throw new Error(`Expected true ending, got ${ending}`);
+  if (await page.locator(".ending-tail").count() !== 3) throw new Error("Expected one ending tail for each final action");
 
   const guard = await browser.newPage({ viewport: { width: 900, height: 700 } });
   let sawConfirm = false;
@@ -142,9 +156,38 @@ async function inspectPerson(page, id, clue) {
   await guard.close();
 
   await page.screenshot({ path: path.join(root, "smoke-desktop.png"), fullPage: true });
-  const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const mobile = await mobileContext.newPage();
+  mobile.setDefaultTimeout(5000);
   await mobile.goto(url);
+  await click(mobile, "#new-game");
+  await click(mobile, ".modal-close");
+  await click(mobile, "#mobile-menu");
+  await click(mobile, '[data-section="people"]');
+  await click(mobile, '[data-person="linxue"]');
+  await click(mobile, '[data-clue="link_linxue"]');
+  await click(mobile, ".modal-close");
+  await click(mobile, "#mobile-menu");
+  await click(mobile, '[data-section="archive"]');
+  await click(mobile, '[data-doc="passengers"]');
+  await click(mobile, '[data-clue="passenger_count"]');
+  await click(mobile, ".modal-close");
+  await click(mobile, "#mobile-menu");
+  await click(mobile, '[data-section="photos"]');
+  await mobile.locator(".photo-frame").first().evaluate(el => el.click());
+  if (!await mobile.locator(".mobile-photo-expanded").count()) throw new Error("Mobile photo did not open fullscreen inspection");
+  await click(mobile, '.mobile-photo-expanded [data-clue="footprints"]');
+  await click(mobile, '[data-close-modal]');
+  await click(mobile, "#mobile-menu");
+  await click(mobile, '[data-section="evidence"]');
+  await click(mobile, '[data-select-clue="passenger_count"]');
+  await click(mobile, '[data-select-clue="footprints"]');
+  await click(mobile, "[data-combine]");
+  if (!(await mobile.locator("#evidence-count").textContent()).includes("1 / 10")) throw new Error("Mobile evidence flow failed");
+  await mobile.evaluate(() => document.querySelectorAll(".toast").forEach(node => node.remove()));
+  await mobile.waitForTimeout(250);
   await mobile.screenshot({ path: path.join(root, "smoke-mobile.png"), fullPage: true });
+  await mobileContext.close();
 
   if (errors.length) throw new Error(errors.join("\n"));
   console.log(JSON.stringify({ ok: true, evidence: count.trim(), hidden: hidden.trim(), ending: ending.trim(), saveGuard: sawConfirm, desktop: "smoke-desktop.png", photos: "smoke-photos.png", mobile: "smoke-mobile.png" }));
