@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1114">
+  <meta name="description" content="《雪线以下》——白岭连续失踪事件调查档案，一款静态网页恐怖推理解谜游戏。">
+  <title>雪线以下｜白岭连续失踪事件调查档案</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/snowline-hero.png" as="image">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="snow" aria-hidden="true"></div>
+
+  <main id="title-screen" class="title-screen">
+    <div class="title-photo" role="img" aria-label="暴雪中的废弃气象站与一辆停在山路上的旧巴士"></div>
+    <div class="title-shade"></div>
+    <section class="title-copy">
+      <p class="eyebrow">白岭连续失踪事件 · 非公开调查档案</p>
+      <h1>雪线以下</h1>
+      <p class="subtitle">每次失踪之前，都不是先少一个人。</p>
+      <p class="subtitle accent">而是先多一个人。</p>
+      <div class="title-actions">
+        <button id="new-game" class="btn primary">开始调查</button>
+        <button id="continue-game" class="btn ghost" hidden>继续记录</button>
+      </div>
+      <p class="content-note">建议佩戴耳机（本游戏无突发音效） · 含轻度心理恐怖内容</p>
+    </section>
+    <div class="case-stamp">CASE FILE<br><b>BL-2004-1217</b><br>REOPENED 2005</div>
+  </main>
+
+  <div id="game" class="game" hidden>
+    <header class="topbar">
+      <button class="mobile-menu" id="mobile-menu" aria-label="展开导航">☰</button>
+      <div class="brand">
+        <span class="brand-mark">雪线以下</span>
+        <span class="brand-sub">白岭案件调查系统</span>
+      </div>
+      <div class="investigator">
+        <span class="live-dot"></span>
+        <span id="investigator-label">当前调查员：林川</span>
+      </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar" aria-label="调查功能">
+      <div class="case-number">档案编号<br><b>BL / 05-0119</b></div>
+      <nav id="nav"></nav>
+      <div class="weather-card">
+        <span>白岭气象</span>
+        <b>−18°C</b>
+        <small>暴雪预警 / 道路封闭</small>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-head">
+        <div>
+          <p id="section-kicker" class="eyebrow">INVESTIGATION DESK</p>
+          <h2 id="section-title">案件</h2>
+        </div>
+        <div class="progress-block">
+          <span id="chapter-label">第一章 · 八组脚印</span>
+          <div class="progress-track"><i id="progress-bar"></i></div>
+        </div>
+      </div>
+      <div id="content" class="content" tabindex="-1"></div>
+    </section>
+
+    <footer class="statusbar">
+      <span>核心证据 <b id="evidence-count">0 / 10</b></span>
+      <span>隐藏档案 <b id="hidden-count">0 / 3</b></span>
+      <span>未读更新 <b id="update-count">0</b></span>
+      <button id="save-status" class="save-status" title="进度会自动保存在此浏览器">● 已自动存档</button>
+    </footer>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" data-close-modal aria-label="关闭">×</button>
+      <div id="modal-content"></div>
+    </section>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+  <script src="game.js"></script>
+</body>
+</html>
