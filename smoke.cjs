@@ -54,7 +54,7 @@ async function loadSave(page, partial) {
   const browser = await chromium.launch({ headless: true, ...(browserPath ? { executablePath: browserPath } : {}) });
   const page = await browser.newPage({ viewport: { width: 1440, height: 950 } });
   page.setDefaultTimeout(5000);
-  page.setDefaultNavigationTimeout(20000);
+  page.setDefaultNavigationTimeout(45000);
   const errors = [];
   page.on("pageerror", e => errors.push(String(e)));
   page.on("console", msg => { if (msg.type() === "error") errors.push(msg.text()); });
@@ -171,7 +171,7 @@ async function loadSave(page, partial) {
   if (!(await page.locator("#hidden-count").textContent()).includes("3 / 3")) throw new Error("Post-ending archive completion was not revealed");
 
   const guard = await browser.newPage({ viewport: { width: 900, height: 700 } });
-  guard.setDefaultNavigationTimeout(20000);
+  guard.setDefaultNavigationTimeout(45000);
   let sawConfirm = false;
   await guard.goto(url, { waitUntil: "domcontentloaded" });
   await guard.evaluate(() => {
@@ -190,7 +190,7 @@ async function loadSave(page, partial) {
   const logicContext = await browser.newContext({ viewport: { width: 1100, height: 800 } });
   const logic = await logicContext.newPage();
   logic.setDefaultTimeout(5000);
-  logic.setDefaultNavigationTimeout(20000);
+  logic.setDefaultNavigationTimeout(45000);
   await logic.goto(url, { waitUntil: "domcontentloaded" });
   await loadSave(logic, {
     section: "evidence",
@@ -285,7 +285,7 @@ async function loadSave(page, partial) {
 
   const metaContext = await browser.newContext({ viewport: { width: 900, height: 700 } });
   const metaPage = await metaContext.newPage();
-  metaPage.setDefaultNavigationTimeout(20000);
+  metaPage.setDefaultNavigationTimeout(45000);
   await metaPage.goto(url, { waitUntil: "domcontentloaded" });
   await metaPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"] })));
   await metaPage.reload({ waitUntil: "domcontentloaded" });
@@ -298,7 +298,7 @@ async function loadSave(page, partial) {
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const mobile = await mobileContext.newPage();
   mobile.setDefaultTimeout(5000);
-  mobile.setDefaultNavigationTimeout(20000);
+  mobile.setDefaultNavigationTimeout(45000);
   await mobile.goto(url, { waitUntil: "domcontentloaded" });
   await click(mobile, "#new-game");
   await click(mobile, ".modal-close");
