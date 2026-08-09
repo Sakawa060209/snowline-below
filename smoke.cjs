@@ -42,6 +42,12 @@ async function inspectPerson(page, id, clue) {
   await click(page, ".modal-close");
 }
 
+async function loadSave(page, partial) {
+  await page.evaluate(save => localStorage.setItem("snowline-below-save-v2", JSON.stringify({ version: 2, ...save })), partial);
+  await page.reload();
+  await click(page, "#continue-game");
+}
+
 (async () => {
   const fallbackEdge = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
   const browserPath = process.env.BROWSER_PATH || (fs.existsSync(fallbackEdge) ? fallbackEdge : null);
@@ -116,7 +122,7 @@ async function inspectPerson(page, id, clue) {
 
   const count = await page.locator("#evidence-count").textContent();
   if (!count.includes("10 / 10")) throw new Error(`Expected 10/10 evidence, got ${count}`);
-  if (!await page.locator('[data-section="final"]:not(.locked)').count()) throw new Error("Final investigation did not unlock");
+  if (await page.locator('[data-section="final"]:not(.locked)').count()) throw new Error("Final investigation unlocked without crossing the point of no return");
 
   await search(page, "红围巾 白岭");
   await click(page, '[data-section="photos"]');
@@ -132,9 +138,10 @@ async function inspectPerson(page, id, clue) {
   await click(page, '[data-hidden="H02"]');
   await click(page, ".modal-close");
   const hidden = await page.locator("#hidden-count").textContent();
-  if (!hidden.includes("3 / 3")) throw new Error(`Expected 3/3 hidden files, got ${hidden}`);
-  await click(page, '[data-section="final"]');
-  for (const id of ["1976", "han", "facility"]) {
+  if (hidden.trim() !== "3") throw new Error(`Expected 3 anomaly files without a disclosed total, got ${hidden}`);
+  await click(page, '[data-section="cases"]');
+  await click(page, "[data-start-final]");
+  for (const id of ["1976", "han", "witness"]) {
     await click(page, `[data-final-choice="${id}"]`);
     if (await page.locator(".action-result").count()) throw new Error(`Final action ${id} leaked content before consumption`);
     await click(page, `[data-complete-final="${id}"]`);
@@ -146,6 +153,7 @@ async function inspectPerson(page, id, clue) {
   if (!ending.includes("雪线以下")) throw new Error(`Expected true ending, got ${ending}`);
   if (await page.locator(".ending-tail").count() !== 3) throw new Error("Expected one ending tail for each final action");
   if (!(await page.locator("#investigator-label").textContent()).includes("郭文")) throw new Error("True ending did not replace the investigator name");
+  if (!(await page.locator("#hidden-count").textContent()).includes("3 / 3")) throw new Error("Post-ending archive completion was not revealed");
 
   const guard = await browser.newPage({ viewport: { width: 900, height: 700 } });
   guard.setDefaultNavigationTimeout(20000);
@@ -169,6 +177,33 @@ async function inspectPerson(page, id, clue) {
   logic.setDefaultTimeout(5000);
   logic.setDefaultNavigationTimeout(20000);
   await logic.goto(url);
+  for (const checkpoint of [
+    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], text: "系统正在建立档案" },
+    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV15"], text: "失联人员：1" },
+    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV16"], text: "失联人员：3" }
+  ]) {
+    await loadSave(logic, { section: "cases", unlockedCases: ["04", "05"], evidence: checkpoint.evidence });
+    if (!(await logic.locator('[data-case="05"]').innerText()).includes(checkpoint.text)) throw new Error(`CASE05 narrative checkpoint missing: ${checkpoint.text}`);
+    if (!await logic.locator("[data-start-final]").count()) throw new Error("CASE05 did not expose the voluntary final threshold");
+  }
+  await loadSave(logic, { section: "people", unlockedCases: ["04", "05"], unlockedSystems: ["final"], finalStarted: true, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"] });
+  if (!(await logic.locator('[data-person="linchuan"] .status').innerText()).includes("待确认")) throw new Error("Final phase did not mark Linchuan as pending");
+  await click(logic, '[data-person="linxue"]');
+  await click(logic, '[data-clue="link_linxue"]');
+  if ((await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")))).clues.includes("link_linxue")) throw new Error("Ordinary clue was added after the final phase started");
+  await click(logic, ".modal-close");
+
+  for (const tier of [
+    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], title: "暴雪" },
+    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV18"], title: "实验记录" },
+    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV08", "EV16"], title: "第七人" },
+    { evidence: ["EV01", "EV10", "EV02", "EV04", "EV08", "EV16", "EV18"], hidden: ["H01"], title: "第七人" }
+  ]) {
+    await loadSave(logic, { section: "final", unlockedCases: ["04", "05"], unlockedSystems: ["final"], finalStarted: true, evidence: tier.evidence, hidden: tier.hidden || [], finalChoices: ["han", "guowen", "seal"], ending: null });
+    await click(logic, "[data-resolve-final]");
+    if (!(await logic.locator(".ending h2").innerText()).includes(tier.title)) throw new Error(`Truth tier unreachable: ${tier.title}`);
+  }
+
   await logic.evaluate(() => localStorage.setItem("snowline-below-save-v2", JSON.stringify({
     version: 2,
     section: "evidence",
@@ -189,6 +224,7 @@ async function inspectPerson(page, id, clue) {
     version: 2,
     section: "final",
     unlockedSystems: ["photos", "evidence", "timeline", "web", "final"],
+    finalStarted: true,
     unlockedDocs: [],
     evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV16", "EV18"],
     clues: ["photo_seventh", "guowen_red_scarf"],

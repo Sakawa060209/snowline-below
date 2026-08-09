@@ -49,7 +49,7 @@
     link_gu: ["顾宁与2003案", "顾宁是失踪摄影师顾晨的姐姐。"],
     link_qiu: ["邱明与2003案", "邱明曾公开报道三案关联。"],
     guowen_identity: ["郭文身份记录异常", "乘客名单有郭文，但常住人口与联系方式均为空白。"],
-    seat_gap: ["空白座位", "车辆核载十人；最后一排有一个没有姓名的使用痕迹。"],
+    seat_gap: ["5B使用痕迹", "车辆核载十人；5B没有登记姓名，却留下长期使用与藏票痕迹。"],
     footprints: ["八组脚印", "巴士外只有八组离开车辆的脚印。"],
     snow_depth: ["雪层厚度矛盾", "照片中的积雪只有约6厘米，与标注的23:48不符。"],
     official_photo_time: ["官方照片时间", "现场照片的归档时间被标注为23:48。"],
@@ -62,12 +62,14 @@
     team_six: ["摄制组共六人", "合同、车票和住宿登记均确认团队只有六人。"],
     photo_seventh: ["照片中的第七人", "底片边缘出现不在名单中的红围巾少年。"],
     class_red_scarf: ["2000合照中的红围巾", "班级合照后排有一名未出现在毕业名单中的红围巾少年。"],
-    guowen_red_scarf: ["红围巾少年", "2000合照与2003底片中的少年相貌、身高完全一致。"],
+    guowen_red_scarf: ["两案红围巾少年", "2000合照与2003底片中的少年在五官比例、身高和围巾特征上高度相似。"],
+    camp_five_depressions: ["五处睡眠压痕", "营地雪面留下五处相邻的睡眠压痕，但现场只有四个睡袋。"],
+    meal_seven: ["七份套餐发票", "摄制组旅馆登记六人，附近饭店发票却连续三晚结算七份套餐。"],
     photo_1976_boy: ["1976照片边缘的人影", "五名登记职工之外，照片最左侧还有一名红围巾少年。"],
     weather_record: ["22时气象记录", "22:00积雪6cm；23:00已达到9cm。"],
     forecast_eight: ["提前写下的八", "韩敬山在现场勘验前就写下‘乘客9，脚印8’。"],
     case_times: ["四案时间摘录", "四起案件的原始材料都留下了一个精确时刻。"],
-    repeated_time: ["重复的19:47", "2000口供、2001笔记、2003底片与2004电台记录均出现19:47。"],
+    repeated_time: ["1988年的19:47异常", "1988年白岭电网事故也在19:47出现持续七分钟的异常负载，早于四起失踪案。"],
     ame_report: ["AME-7记录", "实验组报告：六名成员一致记得现场有第七人郭文。"],
     extra_member: ["附加成员现象", "群体一旦接受额外成员，原成员名单会在短期内减少一人。"],
     facility: ["地下设施通道", "旧气象站、17号公路与2001营地通过废弃维护道相连。"],
@@ -83,17 +85,17 @@
     { id: "EV02", title: "2000年存在第七名学生", needs: ["leave_count", "missing17", "health_guowen"], text: "请假、学号与体检记录共同证明郭文曾被写进学校系统。" },
     { id: "EV04", title: "2001年存在第五人痕迹", needs: ["five_cups", "four_supplies"], text: "营地有五人的生活痕迹，却只有四人份装备。" },
     { id: "EV07", title: "2003底片出现第七人", needs: ["team_six", "photo_seventh"], text: "摄制组名单只有六人，底片却拍到第七个身影。" },
-    { id: "EV08", title: "2000与2003为同一少年", needs: ["photo_seventh", "guowen_red_scarf"], text: "相隔三年，红围巾少年没有明显衰老。" },
+    { id: "EV08", title: "两案红围巾少年高度相似", needs: ["photo_seventh", "guowen_red_scarf"], text: "五官比例、身高与围巾特征高度吻合，疑似同一人。" },
     { id: "EV13", title: "照片标注时间不可信", needs: ["snow_depth", "weather_record"], text: "根据雪深，照片更接近22时拍摄，而不是系统标注的23:48。" },
     { id: "EV15", title: "有人提前知道脚印数量", needs: ["forecast_eight", "footprints"], text: "韩敬山在现场发现前已经写下‘八组脚印’。" },
-    { id: "EV16", title: "四起事件均出现19:47", needs: ["case_times", "repeated_time"], text: "19:47不是巧合，而是所有记录发生同步偏差的时刻。" },
+    { id: "EV16", title: "19:47异常早于四起失踪案", needs: ["case_times", "repeated_time"], text: "四案时间节点与1988电网事故相互独立，19:47并非案件整理时产生的重复标注。" },
     { id: "EV18", title: "AME-7实验与连续失踪地点存在关联", needs: ["ame_report", "extra_member", "facility"], text: "实验地点与数起失踪事件区域重合，附加成员现象可能并非孤立实验结果。" }
   ];
 
   const hypothesisRecipes = [
     { id: "HX01", title: "相机内部时间错误", needs: ["snow_depth", "official_photo_time"], text: "暂时假设：现场相机时钟比实际时间快约两小时。", blockedBy: "S02" },
     { id: "HX02", title: "郭文由AME-7实验产生", needs: ["ame_report", "extra_member"], text: "暂时假设：郭文是附加成员实验造成的认知投射。", blockedBy: "H01" },
-    { id: "S01", title: "郭文不是正常登记乘客", needs: ["guowen_identity", "seat_gap"], text: "巴士记录里的郭文可能并非通过正常购票与座位登记进入名单。", support: true },
+    { id: "S01", title: "5B曾有未登记乘客", needs: ["guowen_identity", "seat_gap"], text: "巴士名单只登记九人，但5B的使用痕迹说明还存在一名未被记录的乘客。", support: true },
     { id: "S02", title: "现场照片时间遭人为修改", needs: ["official_photo_time", "original_photo_time"], text: "原始底片登记为22:08，入库时间却被改成23:48；相机本身并没有走快。", support: true }
   ];
 
@@ -128,8 +130,10 @@
     searches: [],
     hintLevel: 0,
     updates: 0,
+    finalStarted: false,
     finalChoices: [],
     ending: null,
+    completedOnce: false,
     startedAt: Date.now()
   });
 
@@ -152,11 +156,16 @@
       const current = JSON.parse(localStorage.getItem(SAVE_KEY));
       if (current && current.version === 2) {
         state = { ...defaults(), ...current };
+        if (typeof current.finalStarted !== "boolean") {
+          state.finalStarted = Boolean(current.ending);
+          if (!current.ending) state.unlockedSystems = state.unlockedSystems.filter(id => id !== "final");
+        }
+        if (typeof current.completedOnce !== "boolean") state.completedOnce = Boolean(current.ending);
         return;
       }
       const legacy = JSON.parse(localStorage.getItem(LEGACY_SAVE_KEY));
       if (legacy && legacy.version === 1) {
-        state = { ...defaults(), ...legacy, version: 2, hypotheses: [], overturned: [], finalChoices: [], ending: null };
+        state = { ...defaults(), ...legacy, version: 2, hypotheses: [], overturned: [], finalStarted: false, finalChoices: [], ending: null, completedOnce: false };
         localStorage.setItem(SAVE_KEY, JSON.stringify(state));
         localStorage.removeItem(LEGACY_SAVE_KEY);
       }
@@ -190,6 +199,10 @@
   }
 
   function discoverClue(id, silent = false) {
+    if (state.finalStarted && !(id === "photo_1976_boy" && state.finalChoices.includes("1976"))) {
+      toast("最终阶段已开始", "普通调查资料已经冻结，只能处理最终行动明确恢复的内容。");
+      return false;
+    }
     if (!clueData[id] || !addUnique(state.clues, id)) return false;
     state.updates += 1;
     if (!silent) toast("发现线索", clueData[id][0]);
@@ -248,8 +261,16 @@
       unlockSystem("timeline", "跨案件时间线已建立");
     }
     if (state.evidence.length >= 6) unlockCase("05", "CASE 05 · 2005当前事件（系统自动建立）");
-    if (state.evidence.length >= 8 && hasEvidence("EV16") && hasEvidence("EV18")) unlockSystem("final", "暴雪即将封路：请选择最终调查方向");
     save();
+  }
+
+  function startFinalPhase() {
+    if (!hasCase("05") || state.finalStarted) return;
+    state.finalStarted = true;
+    unlockSystem("final", "19:32—19:47：普通调查已冻结");
+    state.section = "final";
+    save();
+    render();
   }
 
   function chapter() {
@@ -267,7 +288,8 @@
     $("#chapter-label").textContent = label;
     $("#progress-bar").style.width = `${progress}%`;
     $("#evidence-count").textContent = `${state.evidence.length} / 10`;
-    $("#hidden-count").textContent = `${state.hidden.length} / 3`;
+    $("#hidden-label").textContent = state.completedOnce ? "档案完成度" : "异常档案";
+    $("#hidden-count").textContent = state.completedOnce ? `${state.hidden.length} / 3` : `${state.hidden.length}`;
     $("#investigator-label").textContent = state.ending === "truth_full" ? "当前调查员：郭文" : "当前调查员：林川";
     const weather = hasSystem("final")
       ? ["−22°C", "预计19:47全面封闭"]
@@ -337,7 +359,7 @@
           <div class="file-meta"><span>${unlocked ? c.date : "----.--.--"}</span><span class="${c.id === "05" ? "new-tag" : ""}">${unlocked ? c.status : "LOCKED"}</span></div>
           ${c.id === "05" && unlocked ? `<i class="corrupt"></i>` : ""}
         </article>`;
-      }).join("")}</div>`;
+      }).join("")}</div>${hasCase("05") && !state.finalStarted ? `<section class="final-threshold"><p class="eyebrow">POINT OF NO RETURN</p><h2>进入最后15分钟</h2><p>进入19:32—19:47后，普通档案将冻结，不能再记录常规线索。你仍可选择继续调查，直到准备好再进入。</p><button class="btn primary" data-start-final>进入最终阶段</button></section>` : ""}`;
   }
 
   function caseModal(id) {
@@ -351,7 +373,9 @@
       "03": "独立纪录片团队调查前两案。六名成员中五人失踪，导演陈垣三个月后死亡。警方将事件定性为恶劣天气导致的摄制事故。",
       "05": currentCase05().desc + (hasSystem("final") ? " 这份档案不是你创建的。" : " 每建立一条跨案结论，名单就离当前调查更近。")
     }[id];
-    openModal(`<div class="modal-inner"><p class="eyebrow">${c.index}</p><h2>${c.title}</h2><p>${details}</p>
+    const supplement = id === "01" && hasClue("camp_five_depressions") ? `<div class="investigation-note"><small>调查补充</small><p>雪面有五处睡眠压痕，与官方四人队伍记录不符。</p></div>`
+      : id === "03" && hasClue("meal_seven") ? `<div class="investigation-note"><small>调查补充</small><p>六人团队连续三晚结算七份套餐，警方事故摘要未收录此附件。</p></div>` : "";
+    openModal(`<div class="modal-inner"><p class="eyebrow">${c.index}</p><h2>${c.title}</h2><p>${details}</p>${supplement}
       <h3>关联档案</h3><div class="archive-list">${files.map(d => archiveRow(d, false)).join("") || `<div class="archive-row"><span class="archive-code">NO FILE</span><span class="archive-title">系统仍在建立索引</span></div>`}</div></div>`);
   }
 
@@ -391,7 +415,7 @@
     const status = personStatus(p);
     const supplement = p.clue
       ? hasClue(p.clue)
-        ? `<div class="investigation-note"><small>调查补充</small><b>${clueData[p.clue][0]}</b><p>${clueData[p.clue][1]}${p.id === "guowen" && state.hypotheses.includes("S01") ? " 未找到对应购票记录。" : ""}</p></div>`
+        ? `<div class="investigation-note"><small>调查补充</small><b>${clueData[p.clue][0]}</b><p>${clueData[p.clue][1]}${p.id === "guowen" && state.hypotheses.includes("S01") ? " 郭文只登记在5A；5B没有对应姓名。" : ""}</p></div>`
         : `<div class="investigation-note pending"><small>调查补充</small><button class="evidence-hit" data-clue="${p.clue}">${p.known}</button></div>`
       : `<div class="investigation-note ${id === "linchuan" && hasCase("05") ? "" : "pending"}"><small>调查补充</small><p>${id === "linchuan" ? currentCase05().desc : p.known}</p></div>`;
     openModal(`<div class="modal-inner profile-layout"><div class="profile-photo"></div><div><p class="eyebrow">PERSONNEL RECORD / ${id.toUpperCase()}</p><h2>${p.name}</h2>
@@ -445,7 +469,7 @@
     if (!d || !archiveAvailable(d)) return;
     addUnique(state.viewed, id);
     const seatRecheck = hasClue("seat_gap") && (state.hypotheses.includes("S01") || hasEvidence("EV08") || hasClue("guowen_red_scarf"))
-      ? `<p class="document-note">再次触摸5B椅背时，松动的蒙皮下露出一角旧纸签。</p><button class="inspect-btn" data-hidden="H03">揭开5B座椅背后的姓名残痕</button>`
+      ? `<p class="document-note">再次触摸5B椅背时，松动的蒙皮下露出一角被撕过的车票。</p><button class="inspect-btn" data-hidden="H03">取出5B夹层里的残破车票</button>`
       : "";
     const h02Available = hasEvidence("EV08") || hasEvidence("EV16");
     const envelopeSeal = h02Available
@@ -457,9 +481,9 @@
       leave: `<p>白岭中学高三（2）班 · 2000年12月23日请假登记</p><table><tr><th>项目</th><th>人数</th></tr><tr><td>集体外出请假</td><td>${inspectButton("leave_count","7")}</td></tr><tr><td>已返校</td><td>2</td></tr><tr><td>警方记录失踪</td><td>4</td></tr></table><p>班主任签字处被重新覆盖。附页中，林雪与罗诚的两份口供都在${inspectButton("time_2000","19:47")}处中断。</p>`,
       roster: `<p>学生编号索引（残页）</p><table><tr><th>学号</th><th>姓名</th></tr><tr><td>15</td><td>林雪</td></tr><tr><td>16</td><td>罗诚</td></tr><tr><td>${inspectButton("missing17","17")}</td><td class="redaction">郭文</td></tr><tr><td>18</td><td>方敏</td></tr><tr><td>19</td><td>陈浩</td></tr></table><p>第17号原始卡片已从档案夹中抽走。</p>`,
       physical: `<p>2000年度学生体格检查表 · 复印残页</p><table><tr><th>编号</th><th>姓名</th><th>出生年</th><th>身高</th></tr><tr><td>17</td><td>${inspectButton("health_guowen","郭文")}</td><td>1983</td><td>171cm</td></tr></table><p>备注：左颈部有旧冻伤；检查时佩戴红色围巾。</p>`,
-      camp: `<p>2001年2月12日，临时营地勘验记录。</p><table><tr><th>物件</th><th>数量</th></tr><tr><td>睡袋</td><td>4</td></tr><tr><td>搪瓷杯</td><td>${inspectButton("five_cups","5（A—E）")}</td></tr><tr><td>使用过的餐具</td><td>5</td></tr></table><p>方志远随身笔记的最后一行只有时间：${inspectButton("time_2001","19:47")}。</p>`,
+      camp: `<p>2001年2月12日，临时营地勘验记录。</p><table><tr><th>物件</th><th>数量</th></tr><tr><td>睡袋</td><td>4</td></tr><tr><td>搪瓷杯</td><td>${inspectButton("five_cups","5（A—E）")}</td></tr><tr><td>使用过的餐具</td><td>5</td></tr></table><p>雪面测绘图还标出了${inspectButton("camp_five_depressions","五处相邻睡眠压痕")}，与四个睡袋的位置并不完全重合。</p><p>方志远随身笔记的最后一行只有时间：${inspectButton("time_2001","19:47")}。</p>`,
       supplies: `<p>北山民间搜救队 · 物资领用</p><table><tr><th>姓名</th><th>背包</th><th>睡袋</th></tr><tr><td>周启明</td><td>1</td><td>1</td></tr><tr><td>苏琴</td><td>1</td><td>1</td></tr><tr><td>高远</td><td>1</td><td>1</td></tr><tr><td>方志远</td><td>1</td><td>1</td></tr></table><p>物资合计：${inspectButton("four_supplies","4套装备")}。没有额外领用签字。</p>`,
-      crew: `<p>《白岭以后》纪录片摄制合同</p><table><tr><th>姓名</th><th>职责</th></tr><tr><td>陈垣</td><td>导演</td></tr><tr><td>唐慧</td><td>制片</td></tr><tr><td>顾晨</td><td>摄影</td></tr><tr><td>李泽</td><td>录音</td></tr><tr><td>孟兰</td><td>研究</td></tr><tr><td>赵航</td><td>司机</td></tr></table><p>合同签约成员：${inspectButton("team_six","6名")}。底片登记表注明，C-12曝光时间为${inspectButton("time_2003","19:47")}。</p>`,
+      crew: `<p>《白岭以后》纪录片摄制合同</p><table><tr><th>姓名</th><th>职责</th></tr><tr><td>陈垣</td><td>导演</td></tr><tr><td>唐慧</td><td>制片</td></tr><tr><td>顾晨</td><td>摄影</td></tr><tr><td>李泽</td><td>录音</td></tr><tr><td>孟兰</td><td>研究</td></tr><tr><td>赵航</td><td>司机</td></tr></table><p>合同签约成员：${inspectButton("team_six","6名")}。旅馆附件中夹着${inspectButton("meal_seven","连续三晚的七份套餐发票")}。底片登记表注明，C-12曝光时间为${inspectButton("time_2003","19:47")}。</p>`,
       weather: `<p>北山气象观测站 · 逐时雪深</p><table><tr><th>时间</th><th>雪深</th></tr><tr><td>21:00</td><td>4cm</td></tr><tr><td>${inspectButton("weather_record","22:00")}</td><td>6cm</td></tr><tr><td>23:00</td><td>9cm</td></tr><tr><td>00:00</td><td>13cm</td></tr></table>`,
       memo: `<p>韩敬山私人便笺，纸张日期早于现场发现约九小时。</p><p class="document-note">17号路。乘客9。${inspectButton("forecast_eight","脚印8")}。不要让他们再次点名。</p><p>随便笺附存的无线电抄件显示，巴士在${inspectButton("time_2004","19:47")}后停止回应。</p><p>夹在末页的底片登记副本仍写着${inspectButton("original_photo_time","22:08") }，旁边注明：相机已于当日校时；系统入库值为23:48。</p>`,
       ame: `<p>附加成员效应观察 · AME-7 · 1991/12/19</p><p>${inspectButton("ame_report","六名受试者在19:47后均报告：实验室自始至终有第七名成员，姓名为“郭文”。")}监控画面无法确认该成员进入过程。</p><p>${inspectButton("extra_member","次日复测时，原六人中的一人从花名册与共同记忆中消失。")} </p>`,
@@ -479,6 +503,7 @@
   function normalizeQuery(q) { return q.toLowerCase().replace(/[\s·\-—_:：]/g, ""); }
 
   function runSearch(query) {
+    if (state.finalStarted) return toast("索引已冻结", "最终阶段开始后不能恢复新的普通网页资料。");
     const q = normalizeQuery(query);
     let type = "none";
     const hasPlace = q.includes("白岭") || q.includes("北山");
@@ -504,7 +529,7 @@
 
   function searchResult(r) {
     const result = {
-      time: ["白岭旧案时间批注汇总", "四份互不相干的记录都在19:47出现涂改、停顿或集体记忆偏差。线索已加入证据板。"],
+      time: ["[缓存] 1988年白岭电网事故简报", "北山线路在19:47出现持续七分钟的异常负载，保护装置却没有记录短路。该记录早于四起失踪案。"],
       "1976": ["[缓存] 北山气象站冬季合影", "一张受损的旧合影已经恢复到照片库。索引页没有人物姓名，需在照片中自行检查。"],
       ame: ["AME-7：附加成员效应观察", "来自已关闭研究所的目录页。完整报告已恢复到资料库。"],
       facility: ["北山气象站维护工程图", "旧气象站、17号公路和2001营地并非三个独立地点。地图已恢复到资料库。"],
@@ -535,7 +560,9 @@
   }
 
   function renderEvidence() {
-    const boardClues = state.clues.filter(id => !id.startsWith("link_") && !["class_red_scarf", "photo_1976_boy"].includes(id));
+    const timelineOnly = ["time_2000", "time_2001", "time_2003", "time_2004"];
+    const supplemental = ["camp_five_depressions", "meal_seven"];
+    const boardClues = state.clues.filter(id => !id.startsWith("link_") && !["class_red_scarf", "photo_1976_boy", ...timelineOnly, ...supplemental].includes(id));
     state.selected = state.selected.filter(id => boardClues.includes(id));
     const selected = state.selected;
     const evidenceCards = recipes.filter(r => hasEvidence(r.id));
@@ -543,7 +570,7 @@
     return `<p class="section-lead">选择2—3条已发现线索，尝试建立结论。无效组合不会损失进度。</p><div class="evidence-layout">
       <section class="clue-bank"><h3>可用于推理的线索 · ${boardClues.length}</h3><div class="clue-chips">${boardClues.length ? boardClues.map(id => `<button class="clue-chip ${selected.includes(id) ? "selected" : ""}" data-select-clue="${id}"><b>${clueData[id][0]}</b><br>${clueData[id][1]}</button>`).join("") : `<span class="section-lead">检查照片、人物与文档以记录线索。</span>`}</div></section>
       <section class="conclusion-panel"><h3>推理槽</h3><div class="combine-tray ${selected.length ? "" : "empty"}">${selected.map(id => `<button class="clue-chip selected" data-select-clue="${id}">${clueData[id][0]}</button>`).join("")}</div><button class="combine-btn" data-combine ${selected.length < 2 ? "disabled" : ""}>建立结论</button></section>
-    </div><div class="evidence-cards">${evidenceCards.map(r => `<article class="evidence-card"><span class="ev-code">${r.id}</span><h4>${r.title}</h4><p>${r.text}</p></article>`).join("")}</div>
+    </div><div class="evidence-cards">${evidenceCards.map(r => `<article class="evidence-card"><span class="ev-code">EVIDENCE ${String(recipes.indexOf(r) + 1).padStart(2, "0")} / ${recipes.length}</span><h4>${r.title}</h4><p>${r.text}</p></article>`).join("")}</div>
       ${hypotheses.length ? `<h3>调查假设</h3><div class="evidence-cards">${hypotheses.map(h => {
         const overturned = state.overturned.includes(h.id);
         const status = h.support ? "辅助推论" : overturned ? "已推翻" : "暂定";
@@ -552,6 +579,7 @@
   }
 
   function combineEvidence() {
+    if (state.finalStarted) return toast("证据板已封存", "最终阶段开始时，当前证据状态已经锁定。");
     const selected = [...state.selected].sort();
     const match = recipes.find(r => !hasEvidence(r.id) && r.needs.length === selected.length && [...r.needs].sort().every((x,i) => x === selected[i]));
     const hypothesis = hypothesisRecipes.find(r => !state.hypotheses.includes(r.id) && r.needs.length === selected.length && [...r.needs].sort().every((x,i) => x === selected[i]));
@@ -578,7 +606,7 @@
     }
     state.evidence.push(match.id);
     state.selected = [];
-    toast(`${match.id} · 关键证据`, match.title, "evidence");
+    toast(`核心证据 ${recipes.indexOf(match) + 1} / ${recipes.length}`, match.title, "evidence");
     updateHypotheses();
     checkUnlocks();
     render();
@@ -598,14 +626,15 @@
   }
 
   function currentHints() {
+    if (state.finalStarted) return ["最终阶段已经开始，普通调查状态已锁定。", "你只能再完成两项最终调查，并选择一项资料处置。1976行动恢复的照片仍允许手动检查。", "真相层级由进入最后15分钟时已经建立的证据决定；最终调查补充材料，处置选择决定后果。"];
     if (!hasEvidence("EV01") || !hasEvidence("EV10")) return ["从2004案开始。这些乘客中似乎有不少人与旧案有关。", "不用确认所有人，先找出足以证明这不是随机同行的关系；再在现场照片里寻找离车痕迹。", "确认至少五名乘客与前三案存在直接联系即可形成‘乘客的共同关系’；补全全部八人是可选调查。分别把关系、脚印与乘客人数进行组合。"];
     if (!hasEvidence("EV02")) return ["2000年的官方口径是六人，但学校系统并不完全同意。", "对照请假人数、连续学号与体检记录。", "资料库的三份2000学校档案分别提供三条所需线索。"];
     if (!hasEvidence("EV04")) return ["生活痕迹和装备数量说的是两种人数。", "检查2001营地勘验与物资领用表。", "组合‘第五只杯子’与‘四人份物资’。"];
     if (!hasEvidence("EV07") || !hasEvidence("EV08")) return ["先确认摄影团队本应有多少人，再观察底片边缘。", "在2000班级照后排和2003底片右侧树林里寻找相同颜色。", "分别记录两张照片中的人影，然后使用照片页出现的‘对比’操作。"];
     if (!hasEvidence("EV13") || !hasEvidence("EV15")) return ["照片标注的时间，和雪的厚度能同时成立吗？标注不可信不等于相机一定损坏。", "在时间线解锁后查气象记录；旧网页恢复后，韩敬山便笺中还有原始底片登记副本。", "雪层厚度＋气象记录可证明标注不可信；官方入库时间＋原始底片时间可继续判断是否有人为改写。私人便笺的‘8’还能与脚印组合。"];
-    if (!hasEvidence("EV16")) return ["有一个时间出现在每起案件里，但开场材料只剩下分钟数。", "分别检查2000口供、2001营地笔记、2003底片附件和2004无线电抄件，再到时间线主动比对。", "四案确认后记录‘跨案件时间’，并检索‘白岭 19:47’，再组合两条线索。"];
+    if (!hasEvidence("EV16")) return ["有一个时间出现在每起案件里，但开场材料只剩下分钟数。", "分别检查2000口供、2001营地笔记、2003底片附件和2004无线电抄件，再到时间线主动比对。", "四案确认后记录‘跨案件时间’，再检索‘白岭 19:47’寻找早于四案的独立记录。"];
     if (!hasEvidence("EV18")) return ["‘附加成员’像实验术语，而三处案发地点也可能不是彼此独立。", "分别检索档案中的项目编号与北山地下设施。", "打开恢复的 AME-7 报告和维护通道图，三条线索共同组成结论。"];
-    return ["最终调查已经开放。仍可寻找1976照片、林雪的信和5B空白座位。", "组合地点与红围巾检索旧照；建立关键结论后再检查档案袋夹层，识别郭文后重新查看5B。", "完整真相要求至少8条核心证据，并包含同一少年、19:47、实验地点关联与1976身份冲突；三次最终行动会分别追加后果。"];
+    return ["CASE 05已经出现。你可以继续调查，也可以从案件页主动进入不可回头的最后15分钟。", "进入前建议复查雪层、韩敬山便笺、1976旧照、档案袋夹层与5B座位。", "最高调查层级要求红围巾疑似同一人、第二次勘验、提前记录、19:47规律、AME-7地点关联和1976身份冲突。"];
   }
 
   function renderNotes() {
@@ -616,10 +645,11 @@
   }
 
   function currentTruthLevel() {
-    const full = state.evidence.length >= 8 && ["EV08", "EV16", "EV18"].every(hasEvidence) && state.hidden.includes("H01");
+    const secondSurvey = hasEvidence("EV13") || state.hypotheses.includes("S02");
+    const full = ["EV08", "EV15", "EV16", "EV18"].every(hasEvidence) && secondSurvey && state.hidden.includes("H01");
     if (full) return "full";
     if (hasEvidence("EV08") && hasEvidence("EV16")) return "member";
-    if (hasEvidence("EV18") || state.evidence.length >= 6) return "experiment";
+    if (hasEvidence("EV18")) return "experiment";
     return "insufficient";
   }
 
@@ -629,24 +659,25 @@
       insufficient: "旧记录并排列出：1976 5→6；1988 6→7；1991 12→13；2000 6→7；2001 4→5；2003 6→7；2004 9→10。没有字段说明箭头的含义。",
       experiment: "维护道日志列出多组人数箭头，并把AME-7与数起事件地点并列记录。它证明研究者长期追踪人数异常，但无法说明数字如何变化。",
       member: "结合各案的人数矛盾，你判断箭头可能是‘登记人数→被共同记住的人数’；记录仍没有说明郭文从何而来。",
-      full: "结合1976影像与各案人数异常，你确认箭头表示实际人数与共同记忆人数：研究者只是在记录早已存在的现象，并非创造它。"
+      full: "结合1976影像与各案人数异常，最一致的解释是：箭头可能表示实际人数与被共同记住的人数。记录仍无法证明郭文是人、实验代号，还是发生在档案与记忆之间的异常。"
     }[level];
     const linxueText = level === "full" || level === "member"
       ? "林雪未寄出的信写着：‘不是有人被雪带走。是每次有人被算进去以后，都必须有人被排除出去。记住郭文，本身可能就是危险的。’"
       : "信纸严重缺损，只剩下：‘……不是雪……不要再点名……记住他也许……’你无法确定她是在描述事实，还是创伤后的恐惧。";
     const guowenText = state.hidden.includes("H01")
-      ? "已验证的记录把同一张面孔从2000年继续提前到1976年；两个年份都将他登记为约17岁，没有出生证明。"
+      ? "2000年体检档案将郭文登记为17岁；1976照片中的少年外貌年龄同样约17岁，但气象站登记册中没有他的姓名或年龄。"
       : hasEvidence("EV08")
         ? "已验证的最早记录来自2000年。2003年底片中的少年与他相貌一致，但没有更早的身份材料可供确认。"
         : "郭文最早只出现在2000年的补录表格中。出生证明、家庭关系与购票记录均为空白，现有材料无法确认跨年代身份。";
     return {
-      facility: { title: "调查地下设施", desc: "追查维护道与AME-7实验", file: "BS-M / LAST LOG", text: facilityText },
-      linxue: { title: "寻找林雪资料", desc: "还原她在2000年后留下的记录", file: "LX / UNSENT", text: linxueText },
-      guowen: { title: "调查郭文身份", desc: "追查身份记录冲突", file: "GW / CONFLICT", text: guowenText },
-      publish: { title: "公开全部档案", desc: "把材料交给报社与公众", file: "PRESS / READY", text: "资料可以被镜像到数十家论坛。传播会迫使地方重新调查，也会让成千上万人第一次共同读到‘郭文’这个名字。" },
-      witness: { title: "保护现有证人", desc: "停止传播郭文的信息", file: "CASE 05 / CONTACT", text: "你切断了三名证人的公开联系方式，并删除在线索引中的姓名。CASE 05 的名单停止增加，但系统仍在后台尝试恢复它们。" },
-      han: { title: "调查韩敬山", desc: "追查人为篡改与地方掩盖", file: "HJS / LAST NOTE", text: "韩敬山最后的手写记录：‘我没有数错。第一次是九个。第二次数的时候，是十个。我不知道多出来的是谁，但我知道少掉的是谁。’" },
-      "1976": { title: "检查1976事件", desc: "恢复实验出现前的气象站记录", file: "MET / 1976", text: state.hidden.includes("H01") ? "你完成了旧照对比：登记职工只有五人，最左侧的红围巾少年却与二十四年后的郭文没有任何区别。" : "气象站冬季合影已经恢复到照片库。索引没有标注第六人的身份；必须回到照片页自行检查并与现有影像比对。" }
+      facility: { kind: "investigation", title: "调查地下设施", desc: "追查维护道与AME-7实验", file: "BS-M / LAST LOG", text: facilityText },
+      linxue: { kind: "investigation", title: "寻找林雪资料", desc: "还原她在2000年后留下的记录", file: "LX / UNSENT", text: linxueText },
+      guowen: { kind: "investigation", title: "调查郭文身份", desc: "追查身份记录冲突", file: "GW / CONFLICT", text: guowenText },
+      han: { kind: "investigation", title: "调查韩敬山", desc: "追查人为篡改与地方掩盖", file: "HJS / LAST NOTE", text: "韩敬山最后的手写记录：‘我没有数错。第一次是九个。第二次数的时候，是十个。我不知道多出来的是谁，但我知道少掉的是谁。’" },
+      "1976": { kind: "investigation", title: "检查1976事件", desc: "恢复实验出现前的气象站记录", file: "MET / 1976", text: state.hidden.includes("H01") ? "你完成了旧照对比：登记职工只有五人，最左侧的红围巾少年与二十四年后的郭文高度相似。" : "气象站冬季合影已经恢复到照片库。索引没有标注第六人的身份；必须回到照片页自行检查并与现有影像比对。" },
+      publish: { kind: "disposition", title: "公开全部档案", desc: "把材料交给报社与公众", file: "PRESS / READY", text: "资料可以被镜像到数十家论坛。传播会迫使地方重新调查，也会让成千上万人第一次共同读到‘郭文’这个名字。" },
+      witness: { kind: "disposition", title: "保护现有证人", desc: "停止传播郭文的信息", file: "CASE 05 / CONTACT", text: "你切断了三名证人的公开联系方式，并删除在线索引中的姓名。CASE 05 的名单停止增加，但系统仍在后台尝试恢复它们。" },
+      seal: { kind: "disposition", title: "封存全部资料", desc: "离线保存材料并终止传播", file: "ARCHIVE / SEALED", text: "你断开工作台网络，把原始材料写入离线介质。官方不会立刻重启调查，索引也暂时停止复制姓名。" }
     };
   }
 
@@ -654,29 +685,35 @@
     if (state.ending) return renderEnding(state.ending);
     const options = finalActionData();
     const chosen = state.finalChoices;
-    return `<div class="intro-card"><p class="eyebrow">FINAL WINDOW / 19:32—19:47</p><h2>暴雪再次来临</h2><blockquote>预计19:47山区道路全面封闭。你只能完成三项最终调查。</blockquote>
-      <p>每次选择都会真正打开一份最终资料并消耗一次行动。证据完整度决定你能理解哪一层真相；行动决定真相造成的后果。已完成 ${chosen.length} / 3。</p>
-      <div class="card-grid">${Object.entries(options).map(([id,o]) => {
-        const conflict = (id === "publish" && chosen.includes("witness")) || (id === "witness" && chosen.includes("publish"));
-        const locked = chosen.includes(id) || chosen.length >= 3 || conflict;
-        return `<article class="file-card ${chosen.includes(id) ? "selected-final final-complete" : ""} ${conflict ? "locked" : ""}" ${locked ? "" : `data-final-choice="${id}"`}><span class="file-index">${chosen.includes(id) ? "ACTION COMPLETE" : conflict ? "MUTUALLY EXCLUSIVE" : "INVESTIGATE"}</span><h3>${o.title}</h3><p>${o.desc}</p></article>`;
-      }).join("")}</div>
-      <button class="btn primary" style="margin-top:24px" data-resolve-final ${chosen.length !== 3 ? "disabled" : ""}>在19:47提交调查结论</button></div>`;
+    const investigations = Object.entries(options).filter(([,o]) => o.kind === "investigation");
+    const dispositions = Object.entries(options).filter(([,o]) => o.kind === "disposition");
+    const investigationCount = chosen.filter(id => options[id]?.kind === "investigation").length;
+    const dispositionCount = chosen.filter(id => options[id]?.kind === "disposition").length;
+    const cards = (items, kind) => items.map(([id,o]) => {
+      const capacityReached = kind === "investigation" ? investigationCount >= 2 : dispositionCount >= 1;
+      const locked = chosen.includes(id) || capacityReached;
+      return `<article class="file-card ${chosen.includes(id) ? "selected-final final-complete" : ""}" ${locked ? "" : `data-final-choice="${id}"`}><span class="file-index">${chosen.includes(id) ? "ACTION COMPLETE" : kind === "investigation" ? "INVESTIGATE" : "DECIDE"}</span><h3>${o.title}</h3><p>${o.desc}</p></article>`;
+    }).join("");
+    return `<div class="intro-card"><p class="eyebrow">FINAL WINDOW / 19:32—19:47</p><h2>暴雪再次来临</h2><blockquote>预计19:47山区道路全面封闭。你只能完成两项调查与一项处置。</blockquote>
+      <p>最终阶段已冻结普通调查。选择两项调查方向决定你还能看到什么，再选择一项处置决定材料的去向。</p>
+      <h3>最终调查 · ${investigationCount} / 2</h3><div class="card-grid">${cards(investigations, "investigation")}</div>
+      <h3>最终处置 · ${dispositionCount} / 1</h3><div class="card-grid">${cards(dispositions, "disposition")}</div>
+      <button class="btn primary" style="margin-top:24px" data-resolve-final ${investigationCount !== 2 || dispositionCount !== 1 ? "disabled" : ""}>在19:47提交调查结论</button></div>`;
   }
 
   function openFinalAction(id) {
     const action = finalActionData()[id];
-    if (!action || state.finalChoices.includes(id) || state.finalChoices.length >= 3) return;
-    const conflict = (id === "publish" && state.finalChoices.includes("witness")) || (id === "witness" && state.finalChoices.includes("publish"));
-    if (conflict) return toast("行动互斥", "公开全部档案与保护现有证人不能同时执行。");
+    if (!action || state.finalChoices.includes(id)) return;
+    const sameKind = state.finalChoices.filter(choice => finalActionData()[choice]?.kind === action.kind).length;
+    if (sameKind >= (action.kind === "investigation" ? 2 : 1)) return;
     openModal(`<div class="modal-inner"><p class="eyebrow">FINAL ACTION / CONFIRM</p><h2>${action.title}</h2><p>${action.desc}</p><p>确认后会立即消耗一次最终行动，随后才会打开对应资料；行动不能更换。</p><button class="btn primary" data-complete-final="${id}">使用行动并打开资料</button></div>`);
   }
 
   function completeFinalAction(id) {
     let action = finalActionData()[id];
-    if (!action || state.finalChoices.includes(id) || state.finalChoices.length >= 3) return;
-    const conflict = (id === "publish" && state.finalChoices.includes("witness")) || (id === "witness" && state.finalChoices.includes("publish"));
-    if (conflict) return;
+    if (!action || state.finalChoices.includes(id)) return;
+    const sameKind = state.finalChoices.filter(choice => finalActionData()[choice]?.kind === action.kind).length;
+    if (sameKind >= (action.kind === "investigation" ? 2 : 1)) return;
     state.finalChoices.push(id);
     if (id === "1976") {
       addUnique(state.unlockedDocs, "photo1976");
@@ -686,19 +723,21 @@
     save();
     render();
     action = finalActionData()[id];
-    openModal(`<div class="modal-inner"><p class="eyebrow">ACTION USED / ${action.file}</p><h2>${action.title}</h2><div class="action-result">${action.text}</div><p>行动已使用 · 剩余 ${3 - state.finalChoices.length} 次</p><button class="btn ghost" data-close-modal>关闭资料</button></div>`);
+    openModal(`<div class="modal-inner"><p class="eyebrow">ACTION USED / ${action.file}</p><h2>${action.title}</h2><div class="action-result">${action.text}</div><p>${action.kind === "investigation" ? "最终调查" : "最终处置"}已记录</p><button class="btn ghost" data-close-modal>关闭资料</button></div>`);
   }
 
   function resolveFinal() {
-    if (state.finalChoices.length !== 3) return;
+    const options = finalActionData();
+    if (state.finalChoices.filter(id => options[id]?.kind === "investigation").length !== 2 || state.finalChoices.filter(id => options[id]?.kind === "disposition").length !== 1) return;
     state.ending = `truth_${currentTruthLevel()}`;
+    state.completedOnce = true;
     save();
     render();
   }
 
   function renderEnding(id) {
     const layers = {
-      truth_full: ["TRUE ENDING / COMPLETE", "雪线以下", "1976、2000、2001、2003、2004的记录指向同一种异常：实际人数短暂增加，随后一名真实成员从名单与共同记忆中消失。AME-7与事件地点有关，却不能证明实验创造了郭文；1976年的影像说明异常早已存在。"],
+      truth_full: ["TRUE ENDING / COMPLETE", "雪线以下", "所有现存资料最一致地支持一种解释：每次人数短暂增加后，都会有一名真实成员从名单与共同记忆中淡出。AME-7记录过这种规律，却无法证明它发生在现实、档案还是人的记忆里；也没有材料能回答郭文究竟是谁。"],
       truth_member: ["ENDING / THE EXTRA MEMBER", "第七人", "你确认同一名少年出现在不同年份，并锁定19:47的同步偏差。多起案件都有人数矛盾，但你还不能证明‘多出一人’与原成员失踪之间的因果关系。"],
       truth_experiment: ["ENDING / THE FACILITY", "实验记录", "地下设施、地方掩盖与附加成员实验可以解释部分档案，却不能证明郭文是实验产物。更早的记录仍是一块空白。"],
       truth_insufficient: ["ENDING / INSUFFICIENT", "暴雪", "证据不足以区分极端天气、档案造假与真正的共同模式。调查在19:47被迫提交。"]
@@ -708,9 +747,10 @@
     const tails = {
       facility: confident ? "维护道日志补上了最后一层：箭头记录实际人数与共同记忆人数的差，研究者只是在追踪异常。" : "维护道日志留下多组人数箭头；你确认它与案件有关，却无法可靠解释每个数字。",
       linxue: confident && state.hidden.includes("H02") ? "林雪的残信补全了动机：她回到白岭是为了阻止下一次点名，并警告你不要第二次数到郭文。" : "林雪显然相信点名会带来危险；现有证据不足以判断这是警告、推测还是创伤记忆。",
-      guowen: confident && state.hidden.includes("H03") ? "5B椅背后的姓名残痕与跨年身份页相互印证：郭文从未通过正常座位登记进入这趟车。" : "郭文的身份记录彼此冲突，最早可验证的年份与进入巴士的方式仍取决于你实际找到的材料。",
+      guowen: confident && state.hidden.includes("H03") ? "5B残票只剩下姓氏‘许’：九人名单之外曾有一名真实的第十位乘客，而被保留下来的郭文坐在5A。" : "郭文的身份记录彼此冲突；5B原本属于谁，仍取决于你是否找到那张被撕毁的车票。",
       publish: confident ? "你公开了全部档案。调查被迫重启，但数月后其他城市开始出现‘合照里多了一人’的帖子；真相也许正在制造新的共同记忆。" : "你公开了尚未完全解释的档案。舆论迫使地方重启调查，也让未经证实的‘第十人’说法迅速传播。",
       witness: "你切断三名证人的公开联系方式。CASE 05暂时停止增长，现有证人保住了姓名；系统后台仍在尝试恢复索引。",
+      seal: confident ? "你把已证明的规律与全部原始材料封存在离线介质中。没有人会立刻读到郭文的名字，但CASE 05仍留在系统缓存里。" : "你封存了尚未解释完整的材料。官方版本不会改变，而那些人数矛盾暂时只存在于一块离线硬盘中。",
       han: confident ? "韩敬山的最后一页补上最后缺口：他没有数错。重新点名时，多出的那一人仍在，少掉的却是真实成员。" : "韩敬山显然坚信人数发生过变化，但你无法独立验证他最后一页笔记。",
       "1976": confident ? "1976旧照把异常的起点提前到AME-7之前至少十五年。" : state.hidden.includes("H01") ? "旧照中的红围巾少年与后来的郭文高度相似，但现有结论仍不足以解释原因。" : "你恢复了1976旧照，却没有在封路前完成其中人物的身份对比。"
     };
@@ -767,21 +807,24 @@
     }
     if (target.matches("[data-close-modal]")) return closeModal();
     if (target.dataset.section) return switchSection(target.dataset.section);
+    if (target.hasAttribute("data-start-final")) return startFinalPhase();
     if (target.dataset.case) return caseModal(target.dataset.case);
     if (target.dataset.person) return personModal(target.dataset.person);
     if (target.dataset.doc) return openDocument(target.dataset.doc);
     if (target.dataset.clue) {
       const clueId = target.dataset.clue;
-      discoverClue(clueId);
+      const discovered = discoverClue(clueId);
+      if (!discovered && !hasClue(clueId)) return;
       target.classList.add("found");
       target.textContent = `✓ ${clueData[clueId][0]}`;
       if (state.section === "photos" && ["class_red_scarf", "photo_seventh", "photo_1976_boy"].includes(clueId)) render();
       return;
     }
     if (target.dataset.hidden) {
+      if (state.finalStarted) return toast("档案已冻结", "最终阶段不能再发现普通隐藏档案。");
       const hiddenFiles = {
         H02: ["林雪未寄出的信（残页）", "夹层里只有一句：别让他们记住他。"],
-        H03: ["5B座椅背后的姓名残痕", "旧纸签只剩最后一个字：文。"]
+        H03: ["5B夹层里的第十人车票", "座位：5B。姓名只剩第一个字：许。九人名单里没有任何人姓许。"]
       };
       const item = hiddenFiles[target.dataset.hidden];
       if (item) {
@@ -801,12 +844,13 @@
     if (target.hasAttribute("data-compare-photos")) {
       if (!hasClue("guowen_red_scarf")) {
         discoverClue("guowen_red_scarf");
-        toast("照片对比完成", "相隔三年，红围巾少年的五官与身高没有明显变化。", "evidence");
+        toast("照片对比完成", "两张照片中的少年在五官比例、身高与围巾特征上高度相似。", "evidence");
         render();
       }
       return;
     }
     if (target.hasAttribute("data-compare-1976")) {
+      if (state.finalStarted && !state.finalChoices.includes("1976")) return toast("照片索引已冻结", "只有选择‘检查1976事件’才能在最终阶段继续这项对比。");
       if (!state.hidden.includes("H01")) {
         discoverHidden("H01", "1976年红围巾少年身份冲突");
         toast("跨年代对比完成", "少年的外貌跨越二十七年没有变化。", "evidence");
@@ -815,6 +859,7 @@
       return;
     }
     if (target.hasAttribute("data-compare-times")) {
+      if (state.finalStarted) return toast("时间线已封存", "最终阶段开始时，普通调查结论已经锁定。");
       if (["time_2000", "time_2001", "time_2003", "time_2004"].every(hasClue)) {
         discoverClue("case_times");
         toast("时间线比对完成", "四起事件都在19:47出现记录中断。", "evidence");
