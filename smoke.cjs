@@ -169,6 +169,11 @@ async function loadSave(page, partial) {
   if (await page.locator(".ending-tail").count() !== 3) throw new Error("Expected one ending tail for each final action");
   if (!(await page.locator("#investigator-label").textContent()).includes("郭文")) throw new Error("True ending did not replace the investigator name");
   if (!(await page.locator("#hidden-count").textContent()).includes("3 / 3")) throw new Error("Post-ending archive completion was not revealed");
+  if ((await page.locator("[data-review]").innerText()).trim() !== "查看已收集档案") throw new Error("Ending archive action is still described as returning to the investigation");
+  let resetPrompt = "";
+  page.once("dialog", async dialog => { resetPrompt = dialog.message(); await dialog.dismiss(); });
+  await click(page, "[data-reset]");
+  if (!resetPrompt.includes("当前周目进度将清除") || !resetPrompt.includes("通关记录会保留")) throw new Error(`Restart prompt did not explain preserved meta progress: ${resetPrompt}`);
 
   const guard = await browser.newPage({ viewport: { width: 900, height: 700 } });
   guard.setDefaultNavigationTimeout(45000);
@@ -212,13 +217,16 @@ async function loadSave(page, partial) {
   if (stagedCase.case05Stage !== 2) throw new Error(`CASE05 did not advance to stage 2 on a later event: ${stagedCase.case05Stage}`);
 
   for (const checkpoint of [
-    { stage: 0, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], text: "系统正在建立档案" },
-    { stage: 1, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV15"], text: "失联人员：1" },
-    { stage: 2, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV16"], text: "失联人员：3" }
+    { stage: 0, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], text: "系统正在建立档案", warning: "名单中间发生了什么" },
+    { stage: 1, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV15"], text: "失联人员：1", warning: "第一名失联者" },
+    { stage: 2, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV13", "EV16"], text: "失联人员：3", warning: "下一次名单更新可能包含你" }
   ]) {
     await loadSave(logic, { section: "cases", unlockedCases: ["04", "05"], case05Stage: checkpoint.stage, evidence: checkpoint.evidence });
     if (!(await logic.locator('[data-case="05"]').innerText()).includes(checkpoint.text)) throw new Error(`CASE05 narrative checkpoint missing: ${checkpoint.text}`);
     if (!await logic.locator("[data-confirm-final]").count()) throw new Error("CASE05 did not expose the voluntary final threshold");
+    await click(logic, "[data-confirm-final]");
+    if (!(await logic.locator(".action-result").innerText()).includes(checkpoint.warning)) throw new Error(`CASE05 stage warning missing: ${checkpoint.warning}`);
+    await click(logic, "[data-close-modal]");
   }
   await loadSave(logic, { section: "people", unlockedCases: ["04", "05"], unlockedSystems: ["final"], case05Stage: 3, finalStarted: true, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"] });
   if (!(await logic.locator('[data-person="linchuan"] .status').innerText()).includes("待确认")) throw new Error("Final phase did not mark Linchuan as pending");
@@ -281,6 +289,11 @@ async function loadSave(page, partial) {
   await click(logic, '[data-compare-1976]');
   rescueState = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!rescueState.hidden.includes("H01")) throw new Error("1976 rescue flow did not grant H01 after manual comparison");
+  await click(logic, '[data-section="final"]');
+  await click(logic, '[data-review-final="1976"]');
+  if (!(await logic.locator(".action-result").innerText()).includes("完成了旧照对比")) throw new Error("Reopened 1976 file did not reflect the later H01 comparison");
+  if (!(await logic.locator("#modal-content").innerText()).includes("不会消耗最终行动")) throw new Error("Reopened final file did not explain that it is free to reread");
+  await click(logic, "[data-close-modal]");
   await logicContext.close();
 
   const metaContext = await browser.newContext({ viewport: { width: 900, height: 700 } });
@@ -289,10 +302,32 @@ async function loadSave(page, partial) {
   await metaPage.goto(url, { waitUntil: "domcontentloaded" });
   await metaPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"] })));
   await metaPage.reload({ waitUntil: "domcontentloaded" });
+  if ((await metaPage.locator("#ending-archive").innerText()).trim() !== "调查记录 1 / 4") throw new Error("Title screen did not expose ending archive progress");
+  await click(metaPage, "#ending-archive");
+  const archiveText = await metaPage.locator("#modal-content").innerText();
+  if (!archiveText.includes("雪线以下") || (archiveText.match(/\?\?\?/g) || []).length !== 3) throw new Error(`Ending archive slots are incorrect: ${archiveText}`);
+  await click(metaPage, ".modal-close");
   await click(metaPage, "#new-game");
   await click(metaPage, ".modal-close");
   if ((await metaPage.locator("#hidden-label").innerText()).trim() !== "档案完成度") throw new Error("Meta completion did not persist into a new game");
   await metaContext.close();
+
+  const clearContext = await browser.newContext({ viewport: { width: 900, height: 700 } });
+  const clearPage = await clearContext.newPage();
+  clearPage.setDefaultNavigationTimeout(45000);
+  await clearPage.goto(url, { waitUntil: "domcontentloaded" });
+  await clearPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"] })));
+  await clearPage.reload({ waitUntil: "domcontentloaded" });
+  let clearPrompt = "";
+  clearPage.once("dialog", async dialog => { clearPrompt = dialog.message(); await dialog.accept(); });
+  await Promise.all([
+    clearPage.waitForNavigation({ waitUntil: "domcontentloaded" }),
+    click(clearPage, "#clear-all-records")
+  ]);
+  if (!clearPrompt.includes("已解锁结局") || !clearPrompt.includes("永久删除")) throw new Error(`Clear-all prompt was ambiguous: ${clearPrompt}`);
+  if (await clearPage.evaluate(() => localStorage.getItem("snowline-below-meta"))) throw new Error("Clear all records did not remove meta progress");
+  if (!await clearPage.locator("#ending-archive").isHidden()) throw new Error("Ending archive remained visible after clearing all records");
+  await clearContext.close();
 
   await page.screenshot({ path: path.join(root, "smoke-desktop.png"), fullPage: true });
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });

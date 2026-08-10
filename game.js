@@ -72,7 +72,7 @@
     case_times: ["四案时间摘录", "四起案件的原始材料都留下了一个精确时刻。"],
     repeated_time: ["1988年的19:47异常", "1988年白岭电网事故也在19:47出现持续七分钟的异常负载，早于四起失踪案。"],
     ame_report: ["AME-7记录", "实验组报告：六名成员一致记得现场有第七人郭文。"],
-    extra_member: ["附加成员现象", "群体一旦接受额外成员，原成员名单会在短期内减少一人。"],
+    extra_member: ["实验组人数减少", "附加成员报告之后，实验组登记人数与受试者记忆同时发生减少。"],
     facility: ["地下设施通道", "旧气象站、17号公路与2001营地通过废弃维护道相连。"],
     time_2000: ["2000案异常时间", "林雪与罗诚的口供都在19:47中断。"],
     time_2001: ["2001案异常时间", "方志远笔记最后一行标注19:47。"],
@@ -162,6 +162,32 @@
   }
 
   function saveMeta() { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
+
+  function renderMetaControls() {
+    const archive = $("#ending-archive");
+    const clear = $("#clear-all-records");
+    if (!archive || !clear) return;
+    archive.hidden = !meta.completedOnce;
+    clear.hidden = !meta.completedOnce;
+    archive.textContent = `调查记录 ${meta.unlockedEndings.length} / 4`;
+  }
+
+  function openEndingArchive() {
+    const endings = [
+      ["truth_insufficient", "暴雪"], ["truth_experiment", "实验记录"], ["truth_member", "第七人"], ["truth_full", "雪线以下"]
+    ];
+    openModal(`<div class="modal-inner"><p class="eyebrow">CROSS-INVESTIGATION META ARCHIVE</p><h2>调查记录 · ${meta.unlockedEndings.length} / 4</h2><p>这些记录跨周目保留。未知槽位只有在对应调查结论完成后才会恢复名称。</p><div class="archive-list">${endings.map(([id,name], index) => {
+      const unlocked = meta.unlockedEndings.includes(id);
+      return `<div class="archive-row ${unlocked ? "" : "locked"}"><span class="archive-code">ENDING ${String(index + 1).padStart(2,"0")}</span><span class="archive-title">${unlocked ? name : "???"}</span><span class="archive-meta">${unlocked ? "RECOVERED" : "LOCKED"}</span></div>`;
+    }).join("")}</div></div>`);
+  }
+
+  function clearAllRecords() {
+    if (!confirm("确定清除全部记录吗？当前周目、已解锁结局和通关记录都会永久删除。")) return;
+    clearSaves();
+    localStorage.removeItem(META_KEY);
+    location.reload();
+  }
 
   function load() {
     try {
@@ -299,7 +325,12 @@
 
   function confirmFinalPhase() {
     if (!hasCase("05") || state.finalStarted) return;
-    openModal(`<div class="modal-inner"><p class="eyebrow">POINT OF NO RETURN / 19:32</p><h2>确认进入最后15分钟？</h2><p>此后无法继续记录普通线索，普通核心证据将永久锁定。最终调查仍可能补足少量关键档案，从而改变你最终能够确认的真相。</p><div class="ending-actions"><button class="btn ghost" data-close-modal>继续普通调查</button><button class="btn primary" data-start-final>确认进入19:32</button></div></div>`);
+    const stageWarning = {
+      0: "系统仍在建立CASE 05。现在结束普通调查，意味着你可能永远不知道名单中间发生了什么。",
+      1: "CASE 05刚刚记录第一名失联者。继续追查也许会让名单再次更新。",
+      2: "已有3人失联。下一次名单更新可能包含你。"
+    }[state.case05Stage] || "CASE 05正在等待下一次名单更新。";
+    openModal(`<div class="modal-inner"><p class="eyebrow">POINT OF NO RETURN / 19:32</p><h2>确认进入最后15分钟？</h2><div class="action-result">${stageWarning}</div><p>此后无法继续记录普通线索，普通核心证据将永久锁定。最终调查仍可能补足少量关键档案，从而改变你最终能够确认的真相。</p><div class="ending-actions"><button class="btn ghost" data-close-modal>继续普通调查</button><button class="btn primary" data-start-final>确认进入19:32</button></div></div>`);
   }
 
   function chapter() {
@@ -404,8 +435,8 @@
       "05": currentCase05().desc + (hasSystem("final") ? " 这份档案不是你创建的。" : " 每建立一条跨案结论，名单就离当前调查更近。")
     }[id];
     const discoveryMap = {
-      "01": [["five_cups", "核心", "第五只杯子"], ["camp_five_depressions", "旁证", "五处睡眠压痕"]],
-      "03": [["photo_seventh", "核心", "底片中的额外人影"], ["meal_seven", "旁证", "连续三晚的七份套餐"]]
+      "01": [["five_cups", "调查线索", "第五只杯子"], ["camp_five_depressions", "旁证", "五处睡眠压痕"]],
+      "03": [["photo_seventh", "调查线索", "底片中的额外人影"], ["meal_seven", "旁证", "连续三晚的七份套餐"]]
     };
     const discoveries = (discoveryMap[id] || []).filter(item => hasClue(item[0]));
     const supplement = discoveries.length ? `<section class="case-discoveries"><h3>补充发现 · ${discoveries.length}</h3>${discoveries.map(item => `<div class="discovery-row"><span class="discovery-kind ${item[1] === "旁证" ? "support" : ""}">${item[1]}</span><b>${item[2]}</b></div>`).join("")}</section>` : "";
@@ -521,7 +552,7 @@
       crew: `<p>《白岭以后》纪录片摄制合同</p><table><tr><th>姓名</th><th>职责</th></tr><tr><td>陈垣</td><td>导演</td></tr><tr><td>唐慧</td><td>制片</td></tr><tr><td>顾晨</td><td>摄影</td></tr><tr><td>李泽</td><td>录音</td></tr><tr><td>孟兰</td><td>研究</td></tr><tr><td>赵航</td><td>司机</td></tr></table><p>合同签约成员：${inspectButton("team_six","6名")}。旅馆附件中夹着${inspectButton("meal_seven","连续三晚的七份套餐发票")}。底片登记表注明，C-12曝光时间为${inspectButton("time_2003","19:47")}。</p>`,
       weather: `<p>北山气象观测站 · 逐时雪深</p><table><tr><th>时间</th><th>雪深</th></tr><tr><td>21:00</td><td>4cm</td></tr><tr><td>${inspectButton("weather_record","22:00")}</td><td>6cm</td></tr><tr><td>23:00</td><td>9cm</td></tr><tr><td>00:00</td><td>13cm</td></tr></table>`,
       memo: `<p>韩敬山私人便笺，纸张日期早于现场发现约九小时。</p><p class="document-note">17号路。乘客9。${inspectButton("forecast_eight","脚印8")}。不要让他们再次点名。</p><p>随便笺附存的无线电抄件显示，巴士在${inspectButton("time_2004","19:47")}后停止回应。</p><p>夹在末页的底片登记副本仍写着${inspectButton("original_photo_time","22:08") }，旁边注明：相机已于当日校时；系统入库值为23:48。</p>`,
-      ame: `<p>附加成员效应观察 · AME-7 · 1991/12/19</p><p>${inspectButton("ame_report","六名受试者在19:47后均报告：实验室自始至终有第七名成员，姓名为“郭文”。")}监控画面无法确认该成员进入过程。</p><p>${inspectButton("extra_member","次日复测时，原六人中的一人从花名册与共同记忆中消失。")} </p>`,
+      ame: `<p>附加成员效应观察 · AME-7 · 1991/12/19</p><p>${inspectButton("ame_report","六名受试者在19:47后均报告：实验室自始至终有第七名成员，姓名为“郭文”。")}监控画面无法确认该成员进入过程。</p><p>${inspectButton("extra_member","次日复测仅能确认五名受试者。第六人的姓名在花名册中缺失，其余受试者均否认曾存在第六人。")} </p>`,
       facility: `<p>北山废弃维护通道图 · 1974</p><p>${inspectButton("facility","三条封闭支路分别通向北山气象站、17号公路旧涵洞与白岭北坡临时营地。")}</p>`
     };
     openModal(`<article class="document"><header class="document-head"><small>${d.code}</small><h2>${d.title}</h2></header><div class="document-body">${bodies[id] || "<p>文档损坏。</p>"}</div></article>`);
@@ -729,8 +760,9 @@
     const dispositionCount = chosen.filter(id => options[id]?.kind === "disposition").length;
     const cards = (items, kind) => items.map(([id,o]) => {
       const capacityReached = kind === "investigation" ? investigationCount >= 2 : dispositionCount >= 1;
-      const locked = chosen.includes(id) || capacityReached;
-      return `<article class="file-card ${chosen.includes(id) ? "selected-final final-complete" : ""}" ${locked ? "" : `data-final-choice="${id}"`}><span class="file-index">${chosen.includes(id) ? "ACTION COMPLETE" : kind === "investigation" ? "INVESTIGATE" : "DECIDE"}</span><h3>${o.title}</h3><p>${o.desc}</p></article>`;
+      const completed = chosen.includes(id);
+      const interaction = completed ? `data-review-final="${id}"` : capacityReached ? "" : `data-final-choice="${id}"`;
+      return `<article class="file-card ${completed ? "selected-final final-complete" : ""}" ${interaction}><span class="file-index">${completed ? "ACTION COMPLETE" : kind === "investigation" ? "INVESTIGATE" : "DECIDE"}</span><h3>${o.title}</h3><p>${o.desc}</p>${completed ? `<p class="reopen-note">点击重新阅读</p>` : ""}</article>`;
     }).join("");
     return `<div class="intro-card"><p class="eyebrow">FINAL WINDOW / 19:32—19:47</p><h2>暴雪再次来临</h2><blockquote>预计19:47山区道路全面封闭。你只能完成两项调查与一项处置。</blockquote>
       <p>普通核心证据已在进入19:32时锁定；最终调查仍可能补足少量关键档案，从而改变你最终能够确认的真相。选择两项调查方向，再选择一项处置决定材料的去向。</p>
@@ -764,6 +796,13 @@
     openModal(`<div class="modal-inner"><p class="eyebrow">ACTION USED / ${action.file}</p><h2>${action.title}</h2><div class="action-result">${action.text}</div><p>${action.kind === "investigation" ? "最终调查" : "最终处置"}已记录</p><button class="btn ghost" data-close-modal>关闭资料</button></div>`);
   }
 
+  function reopenFinalAction(id) {
+    if (!state.finalChoices.includes(id)) return;
+    const action = finalActionData()[id];
+    if (!action) return;
+    openModal(`<div class="modal-inner"><p class="eyebrow">ARCHIVED FINAL FILE / ${action.file}</p><h2>${action.title}</h2><div class="action-result">${action.text}</div><p>重新阅读不会消耗最终行动。</p><button class="btn ghost" data-close-modal>关闭资料</button></div>`);
+  }
+
   function resolveFinal() {
     const options = finalActionData();
     if (state.finalChoices.filter(id => options[id]?.kind === "investigation").length !== 2 || state.finalChoices.filter(id => options[id]?.kind === "disposition").length !== 1) return;
@@ -772,6 +811,7 @@
     meta.completedOnce = true;
     addUnique(meta.unlockedEndings, state.ending);
     saveMeta();
+    renderMetaControls();
     save();
     render();
   }
@@ -788,7 +828,7 @@
     const tails = {
       facility: confident ? "维护道日志补上了最后一层：箭头记录实际人数与共同记忆人数的差，研究者只是在追踪异常。" : "维护道日志留下多组人数箭头；你确认它与案件有关，却无法可靠解释每个数字。",
       linxue: confident && state.hidden.includes("H02") ? "林雪的残信补全了动机：她回到白岭是为了阻止下一次点名，并警告你不要第二次数到郭文。" : "林雪显然相信点名会带来危险；现有证据不足以判断这是警告、推测还是创伤记忆。",
-      guowen: confident && state.hidden.includes("H03") ? "5B残票只剩下姓氏‘许’：九人名单之外曾有一名真实的第十位乘客，而被保留下来的郭文坐在5A。" : "郭文的身份记录彼此冲突；5B原本属于谁，仍取决于你是否找到那张被撕毁的车票。",
+      guowen: confident && state.hidden.includes("H03") ? "至少有一份与案发当日一致的记录表明，5B曾登记为‘许×’；现有九人名单没有这个名字，而郭文被登记在5A。" : "郭文的身份记录彼此冲突；5B原本属于谁，仍取决于你是否找到那张被撕毁的车票。",
       publish: confident ? "你公开了全部档案。调查被迫重启，但数月后其他城市开始出现‘合照里多了一人’的帖子；真相也许正在制造新的共同记忆。" : "你公开了尚未完全解释的档案。舆论迫使地方重启调查，也让未经证实的‘第十人’说法迅速传播。",
       witness: "你切断三名证人的公开联系方式。CASE 05暂时停止增长，现有证人保住了姓名；系统后台仍在尝试恢复索引。",
       seal: confident ? "你把已证明的规律与全部原始材料封存在离线介质中。没有人会立刻读到郭文的名字，但CASE 05仍留在系统缓存里。" : "你封存了尚未解释完整的材料。官方版本不会改变，而那些人数矛盾暂时只存在于一块离线硬盘中。",
@@ -797,7 +837,7 @@
     };
     const e = layers[id] || layers.truth_insufficient;
     const actionTails = state.finalChoices.map(choice => `<p class="ending-tail">${tails[choice]}</p>`).join("");
-    return `<section class="ending"><div class="ending-copy"><p class="eyebrow">${e[0]}</p><h2>《${e[1]}》</h2><p>${e[2]}</p>${actionTails}<div class="ending-actions"><button class="btn ghost" data-review>返回调查</button><button class="btn primary" data-reset>重新开始</button></div></div></section>`;
+    return `<section class="ending"><div class="ending-copy"><p class="eyebrow">${e[0]}</p><h2>《${e[1]}》</h2><p>${e[2]}</p>${actionTails}<div class="ending-actions"><button class="btn ghost" data-review>查看已收集档案</button><button class="btn primary" data-reset>重新开始</button></div></div></section>`;
   }
 
   function openModal(html) {
@@ -832,14 +872,14 @@
   }
 
   function resetGame() {
-    if (!confirm("确定清除本浏览器中的全部调查进度吗？")) return;
+    if (!confirm("确定重新开始调查吗？当前周目进度将清除，已解锁结局与通关记录会保留。")) return;
     state = defaults();
     clearSaves();
     location.reload();
   }
 
   document.addEventListener("click", (e) => {
-    const target = e.target.closest("button, [data-case], [data-person], [data-doc], [data-final-choice]");
+    const target = e.target.closest("button, [data-case], [data-person], [data-doc], [data-final-choice], [data-review-final]");
     if (!target) {
       const frame = e.target.closest(".photo-frame");
       if (frame && matchMedia("(max-width: 820px)").matches && !frame.closest(".mobile-photo-expanded")) openPhotoViewer(frame);
@@ -920,6 +960,7 @@
     if (target.dataset.finalChoice) {
       return openFinalAction(target.dataset.finalChoice);
     }
+    if (target.dataset.reviewFinal) return reopenFinalAction(target.dataset.reviewFinal);
     if (target.dataset.completeFinal) return completeFinalAction(target.dataset.completeFinal);
     if (target.hasAttribute("data-resolve-final")) return resolveFinal();
     if (target.hasAttribute("data-review")) { state.ending = null; save(); render(); return; }
@@ -939,11 +980,14 @@
     startGame(true);
   });
   $("#continue-game").addEventListener("click", () => startGame(false));
+  $("#ending-archive").addEventListener("click", openEndingArchive);
+  $("#clear-all-records").addEventListener("click", clearAllRecords);
   $("#mobile-menu").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
   $("#modal").addEventListener("click", e => { if (e.target.matches("[data-close-modal]")) closeModal(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#modal").hidden) closeModal(); });
 
   loadMeta();
   load();
+  renderMetaControls();
   if (hasStoredSave()) $("#continue-game").hidden = false;
 })();

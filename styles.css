@@ -53,7 +53,9 @@ button { color: inherit; }
 .title-copy h1 { margin: 0 0 28px; font-family: "Noto Serif SC", SimSun, serif; font-size: clamp(64px, 10vw, 128px); font-weight: 400; line-height: .95; letter-spacing: .12em; text-shadow: 0 4px 30px #000; }
 .subtitle { margin: 7px 0; color: #c4cecf; font-family: "Noto Serif SC", SimSun, serif; font-size: clamp(16px, 2vw, 22px); letter-spacing: .08em; }
 .subtitle.accent { color: #d15954; }
-.title-actions { display: flex; gap: 12px; margin-top: 40px; }
+.title-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; }
+.clear-records { margin-top: 14px; padding: 0; border: 0; background: transparent; color: #697779; font: 10px ui-monospace, monospace; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.clear-records:hover { color: #b85a55; }
 .btn { min-height: 44px; padding: 0 24px; border: 1px solid var(--line); border-radius: 2px; background: transparent; cursor: pointer; transition: .2s ease; letter-spacing: .1em; }
 .btn:hover { transform: translateY(-1px); border-color: var(--ice); }
 .btn.primary { border-color: var(--red); background: var(--red); color: white; }
@@ -135,7 +137,7 @@ button { color: inherit; }
 .case-discoveries { margin: 22px 0; padding: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.02); }
 .case-discoveries h3 { margin-top: 0; }
 .discovery-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid rgba(92,108,111,.24); }
-.discovery-kind { min-width: 42px; color: #d06b64; font: 9px ui-monospace, monospace; letter-spacing: .08em; }
+.discovery-kind { min-width: 58px; color: #d06b64; font: 9px ui-monospace, monospace; letter-spacing: .08em; }
 .discovery-kind.support { color: #87a5a7; }
 
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 20px; }
@@ -239,7 +241,8 @@ button { color: inherit; }
 .compare-panel h3 { margin: 0 0 8px; font: 400 16px "Noto Serif SC", serif; }
 .compare-panel p { color: var(--muted); font-size: 12px; }
 .selected-final { border-color: var(--red-light); background: rgba(167,43,43,.12); }
-.final-complete { opacity: .62; }
+.final-complete { opacity: .78; cursor: pointer; }
+.reopen-note { color: var(--ice); font: 9px ui-monospace, monospace; letter-spacing: .08em; }
 .action-result { margin: 24px 0; padding: 20px; border-left: 2px solid var(--red); background: #0b1113; color: #bdc9ca; line-height: 1.9; }
 .final-threshold { margin-top: 28px; padding: 24px; border: 1px solid #773434; background: linear-gradient(135deg, rgba(167,43,43,.12), rgba(12,19,21,.92)); }
 .final-threshold h2 { margin: 5px 0 10px; font: 400 24px "Noto Serif SC", serif; }
