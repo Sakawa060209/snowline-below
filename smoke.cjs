@@ -4,6 +4,7 @@ const fs = require("fs");
 
 const root = __dirname;
 const url = process.env.LIVE_URL || `file:///${path.join(root, "index.html").replace(/\\/g, "/")}`;
+const navigationTimeout = process.env.LIVE_URL ? 90000 : 45000;
 
 async function click(page, selector) {
   await page.locator(selector).first().evaluate(element => element.click());
@@ -54,7 +55,7 @@ async function loadSave(page, partial) {
   const browser = await chromium.launch({ headless: true, ...(browserPath ? { executablePath: browserPath } : {}) });
   const page = await browser.newPage({ viewport: { width: 1440, height: 950 } });
   page.setDefaultTimeout(5000);
-  page.setDefaultNavigationTimeout(45000);
+  page.setDefaultNavigationTimeout(navigationTimeout);
   const errors = [];
   page.on("pageerror", e => errors.push(String(e)));
   page.on("console", msg => { if (msg.type() === "error") errors.push(msg.text()); });
@@ -231,7 +232,7 @@ async function loadSave(page, partial) {
   if (!resetPrompt.includes("当前周目进度将清除") || !resetPrompt.includes("通关记录会保留")) throw new Error(`Restart prompt did not explain preserved meta progress: ${resetPrompt}`);
 
   const guard = await browser.newPage({ viewport: { width: 900, height: 700 } });
-  guard.setDefaultNavigationTimeout(45000);
+  guard.setDefaultNavigationTimeout(navigationTimeout);
   let sawConfirm = false;
   await guard.goto(url, { waitUntil: "domcontentloaded" });
   await guard.evaluate(() => {
@@ -250,7 +251,7 @@ async function loadSave(page, partial) {
   const logicContext = await browser.newContext({ viewport: { width: 1100, height: 800 } });
   const logic = await logicContext.newPage();
   logic.setDefaultTimeout(5000);
-  logic.setDefaultNavigationTimeout(45000);
+  logic.setDefaultNavigationTimeout(navigationTimeout);
   await logic.goto(url, { waitUntil: "domcontentloaded" });
   await loadSave(logic, {
     section: "evidence",
@@ -362,7 +363,7 @@ async function loadSave(page, partial) {
 
   const metaContext = await browser.newContext({ viewport: { width: 900, height: 700 } });
   const metaPage = await metaContext.newPage();
-  metaPage.setDefaultNavigationTimeout(45000);
+  metaPage.setDefaultNavigationTimeout(navigationTimeout);
   await metaPage.goto(url, { waitUntil: "domcontentloaded" });
   await metaPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"], unlockedDispositions: ["seal"] })));
   await metaPage.reload({ waitUntil: "domcontentloaded" });
@@ -378,7 +379,7 @@ async function loadSave(page, partial) {
 
   const clearContext = await browser.newContext({ viewport: { width: 900, height: 700 } });
   const clearPage = await clearContext.newPage();
-  clearPage.setDefaultNavigationTimeout(45000);
+  clearPage.setDefaultNavigationTimeout(navigationTimeout);
   await clearPage.goto(url, { waitUntil: "domcontentloaded" });
   await clearPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"] })));
   await clearPage.reload({ waitUntil: "domcontentloaded" });
@@ -397,7 +398,7 @@ async function loadSave(page, partial) {
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const mobile = await mobileContext.newPage();
   mobile.setDefaultTimeout(5000);
-  mobile.setDefaultNavigationTimeout(45000);
+  mobile.setDefaultNavigationTimeout(navigationTimeout);
   await mobile.goto(url, { waitUntil: "domcontentloaded" });
   await click(mobile, "#new-game");
   await click(mobile, ".modal-close");
