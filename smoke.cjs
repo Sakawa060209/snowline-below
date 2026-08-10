@@ -133,6 +133,8 @@ async function loadSave(page, partial) {
   await combine(page, ["S01", "ticket_xu", "xu_deleted"]);
   xuState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!xuState.hypotheses.includes("S03")) throw new Error("S01 + Xu ticket + deleted index did not form the tenth passenger record conclusion");
+  const directionText = await page.locator(".investigation-directions").innerText();
+  if (!["暴雪事故", "地下实验", "第七人", "5B删除记录证明名单曾变化"].every(text => directionText.includes(text))) throw new Error(`Investigation directions did not reflect the current evidence: ${directionText}`);
 
   await openDoc(page, "weather", ["weather_record"]);
   await combine(page, ["snow_depth", "weather_record"]);
@@ -194,6 +196,8 @@ async function loadSave(page, partial) {
   await click(page, '[data-section="cases"]');
   if (!(await page.locator('[data-case="05"]').innerText()).includes("失联人员：3")) throw new Error("Main flow did not preserve CASE05 stage 2 before the final threshold");
   await click(page, "[data-confirm-final]");
+  const finalReview = await page.locator("#modal-content").innerText();
+  if (!["最终提交前确认", "已确认事实", "仍未确认", "核心证据 10 / 10", "郭文的真实来源"].every(text => finalReview.includes(text))) throw new Error(`Point-of-no-return evidence review is incomplete: ${finalReview}`);
   if (!await page.locator("[data-start-final]").count()) throw new Error("Final threshold did not require a second confirmation");
   let preFinalState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (preFinalState.finalStarted) throw new Error("Opening final confirmation already froze the investigation");
@@ -221,6 +225,9 @@ async function loadSave(page, partial) {
   if (!ending.includes("雪线以下")) throw new Error(`Expected true ending, got ${ending}`);
   if (await page.locator(".ending-tail").count() !== 3) throw new Error("Expected one ending tail for each final action");
   if (await page.locator(".ending-basis .basis-row.confirmed").count() !== 4) throw new Error("True ending did not explain all four confirmed investigation directions");
+  if ((await page.locator(".investigation-rating .rating-grade strong").innerText()).trim() !== "S") throw new Error("Complete investigation did not receive an S rating");
+  const ratingText = await page.locator(".investigation-rating").innerText();
+  if (!["核心证据", "10 / 10", "异常档案", "3 / 3", "第五号座位", "已闭合", "保护证人"].every(text => ratingText.includes(text))) throw new Error(`Complete investigation rating breakdown is incomplete: ${ratingText}`);
   if (!(await page.locator("#investigator-label").textContent()).includes("郭文")) throw new Error("True ending did not replace the investigator name");
   if (!(await page.locator("#hidden-count").textContent()).includes("3 / 3")) throw new Error("Post-ending archive completion was not revealed");
   if ((await page.locator("[data-review]").innerText()).trim() !== "查看已收集档案") throw new Error("Ending archive action is still described as returning to the investigation");
@@ -301,6 +308,10 @@ async function loadSave(page, partial) {
     await click(logic, "[data-resolve-final]");
     if (!(await logic.locator(".ending h2").innerText()).includes(tier.title)) throw new Error(`Truth tier unreachable: ${tier.title}`);
   }
+
+  await loadSave(logic, { section: "final", unlockedCases: ["04", "05"], unlockedSystems: ["final"], case05Stage: 3, finalStarted: true, evidence: ["EV08", "EV13", "EV15", "EV16", "EV18"], hidden: ["H01"], hypotheses: [], finalChoices: ["han", "guowen", "seal"], ending: null });
+  await click(logic, "[data-resolve-final]");
+  if (!(await logic.locator(".ending h2").innerText()).includes("雪线以下") || (await logic.locator(".rating-grade strong").innerText()).trim() !== "A") throw new Error("True ending with incomplete optional records did not receive an A rating");
 
   await loadSave(logic, { section: "final", unlockedCases: ["04", "05"], unlockedSystems: ["final"], case05Stage: 3, finalStarted: true, evidence: ["EV01", "EV10", "EV02", "EV04"], hidden: [], hypotheses: [], finalChoices: ["han", "guowen", "publish"], ending: null });
   await click(logic, "[data-resolve-final]");
