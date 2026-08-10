@@ -520,6 +520,7 @@
         return `<button class="hotspot ${found ? "found" : ""}" style="left:${h[1]};top:${h[2]}" data-clue="${h[0]}" aria-label="${found ? clueData[h[0]][0] : "检查照片细节"}">${found ? `✓ ${clueData[h[0]][0]}` : ""}</button>`;
       }).join("")}</div>
       <div class="photo-info"><h3>${p.title}</h3>${p.metaClue ? inspectButton(p.metaClue, p.meta) : `<span>${p.meta}</span>`}</div>
+      <button class="photo-expand" data-open-photo="${p.id}" aria-label="放大查看${p.title}">⤢ 放大取证</button>
       ${findings.length ? `<section class="photo-findings"><h4>已记录的观察</h4>${findings.map(([id]) => `<div class="photo-finding"><b>${clueData[id][0]}</b><p>${clueData[id][1]}</p></div>`).join("")}</section>` : ""}</article>`;
     }).join("")}</div>
       ${canCompare ? `<section class="compare-panel"><h3>两张照片出现了相似细节</h3><p>2000合照和2003底片中都出现了红围巾少年。只有主动对照，才能判断是否为同一人。</p><button class="btn ghost" data-compare-photos>${hasClue("guowen_red_scarf") ? "✓ 对比结论已记录" : "对比2000合照与2003底片"}</button></section>` : ""}
@@ -858,6 +859,7 @@
   }
 
   function openModal(html) {
+    $("#modal .modal-panel").classList.remove("photo-viewer-panel");
     $("#modal-content").innerHTML = html;
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
@@ -871,7 +873,8 @@
   function openPhotoViewer(frame) {
     const card = frame.closest(".photo-card");
     const title = card?.querySelector("h3")?.textContent || "照片细节";
-    openModal(`<div class="modal-inner mobile-photo-expanded"><p class="eyebrow">PHOTO INSPECTION</p><h2>${title}</h2><div class="photo-frame ${[...frame.classList].filter(c => c !== "photo-frame").join(" ")}">${frame.innerHTML}</div><p>放大视图不会自动标注异常；仍需点击你认为可疑的位置。</p><button class="btn ghost" data-close-modal>关闭照片</button></div>`);
+    openModal(`<div class="modal-inner mobile-photo-expanded photo-inspection-expanded"><p class="eyebrow">PHOTO INSPECTION / ENLARGED</p><h2>${title}</h2><div class="photo-frame ${[...frame.classList].filter(c => c !== "photo-frame").join(" ")}">${frame.innerHTML}</div><p>这是独立的放大取证视图。画面不会自动标出答案；可直接点击你认为可疑的物件或人物记录线索。</p><button class="btn ghost" data-close-modal>关闭照片</button></div>`);
+    $("#modal .modal-panel").classList.add("photo-viewer-panel");
   }
 
   function startGame(fresh = false) {
@@ -899,11 +902,16 @@
     const target = e.target.closest("button, [data-case], [data-person], [data-doc], [data-final-choice], [data-review-final]");
     if (!target) {
       const frame = e.target.closest(".photo-frame");
-      if (frame && matchMedia("(max-width: 820px)").matches && !frame.closest(".mobile-photo-expanded")) openPhotoViewer(frame);
+      if (frame && !frame.closest(".photo-inspection-expanded")) openPhotoViewer(frame);
       else if (frame) toast("照片检查", "这里没有发现值得记录的东西。");
       return;
     }
     if (target.matches("[data-close-modal]")) return closeModal();
+    if (target.dataset.openPhoto) {
+      const frame = target.closest(".photo-card")?.querySelector(".photo-frame");
+      if (frame) openPhotoViewer(frame);
+      return;
+    }
     if (target.dataset.section) return switchSection(target.dataset.section);
     if (target.hasAttribute("data-confirm-final")) return confirmFinalPhase();
     if (target.hasAttribute("data-start-final")) return startFinalPhase();

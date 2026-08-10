@@ -171,6 +171,8 @@ button { color: inherit; }
 .photo-info { padding: 12px 5px 4px; display: flex; justify-content: space-between; gap: 15px; }
 .photo-info h3 { margin: 0; font: 400 15px "Noto Serif SC", serif; }
 .photo-info span { color: var(--faint); font: 9px ui-monospace, monospace; }
+.photo-expand { width: calc(100% - 10px); margin: 7px 5px 5px; padding: 9px 12px; border: 1px solid rgba(92,108,111,.42); background: rgba(255,255,255,.02); color: #91a5a7; cursor: zoom-in; font: 10px ui-monospace, monospace; letter-spacing: .1em; text-align: left; }
+.photo-expand:hover { border-color: var(--ice); color: #d3dfe0; background: rgba(202,220,222,.05); }
 .photo-findings { margin: 8px 5px 5px; padding: 14px 16px; border-left: 2px solid var(--red); background: #0b1113; }
 .photo-findings h4 { margin: 0 0 8px; color: var(--faint); font: 9px ui-monospace, monospace; letter-spacing: .12em; }
 .photo-finding + .photo-finding { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(92,108,111,.22); }
@@ -265,8 +267,9 @@ button { color: inherit; }
 .final-threshold p:not(.eyebrow) { max-width: 720px; color: var(--muted); }
 .hypothesis-card { border-style: dashed; }
 .hypothesis-card.overturned { opacity: .55; text-decoration: line-through; }
-.mobile-photo-expanded { width: min(1100px, 92vw); }
-.mobile-photo-expanded .photo-frame { min-height: 52vh; background-color: #020405; background-size: contain; background-repeat: no-repeat; background-position: center; }
+.modal-panel.photo-viewer-panel { width: min(1280px, 96vw); }
+.mobile-photo-expanded { width: 100%; }
+.mobile-photo-expanded .photo-frame { width: 100%; min-height: 0; aspect-ratio: 16/10; background-color: #020405; background-size: cover; background-repeat: no-repeat; background-position: center; }
 .mobile-photo-expanded .hotspot { width: 56px; height: 56px; }
 
 .modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 25px; }

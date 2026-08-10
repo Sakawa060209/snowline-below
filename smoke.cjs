@@ -73,7 +73,12 @@ async function loadSave(page, partial) {
   await click(page, '[data-section="photos"]');
   if (await page.locator(".photo-card").first().locator(".footprint-trail").count() !== 8) throw new Error("Bus photo does not visibly contain eight countable footprint trails");
   if (!await page.locator(".photo-card").first().locator(".snow-ruler").isVisible()) throw new Error("Bus photo is missing a visible snow-depth ruler");
-  await click(page, '[data-clue="footprints"]');
+  const photoCardWidth = (await page.locator(".photo-card").first().boundingBox()).width;
+  await click(page, '.photo-card:first-child [data-open-photo="bus"]');
+  const enlargedWidth = (await page.locator(".photo-inspection-expanded .photo-frame").boundingBox()).width;
+  if (enlargedWidth <= photoCardWidth + 80) throw new Error(`Desktop photo did not enlarge for inspection: ${photoCardWidth} -> ${enlargedWidth}`);
+  await click(page, '.photo-inspection-expanded [data-clue="footprints"]');
+  await click(page, '.photo-inspection-expanded [data-close-modal]');
   await click(page, '[data-clue="snow_depth"]');
   const busFindings = await page.locator(".photo-card").first().locator(".photo-findings").innerText();
   if (!busFindings.includes("巴士外只有八组离开车辆的脚印") || !busFindings.includes("照片中的积雪只有约6厘米")) throw new Error(`Photo clue details were not retained: ${busFindings}`);
@@ -141,6 +146,12 @@ async function loadSave(page, partial) {
   const hypothesisState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   for (const id of ["HX01", "HX02", "S01", "S02"]) if (!hypothesisState.hypotheses.includes(id)) throw new Error(`Missing hypothesis ${id}`);
   for (const id of ["HX01", "HX02"]) if (!hypothesisState.overturned.includes(id)) throw new Error(`Hypothesis ${id} was not overturned`);
+  const photoTitles = await page.locator(".photo-card h3").allInnerTexts();
+  for (let index = 0; index < photoTitles.length; index += 1) {
+    await page.locator(".photo-card .photo-expand").nth(index).evaluate(element => element.click());
+    if ((await page.locator(".photo-inspection-expanded h2").innerText()).trim() !== photoTitles[index].trim()) throw new Error(`Photo ${index + 1} did not open its own inspection view`);
+    await click(page, '.photo-inspection-expanded [data-close-modal]');
+  }
   await page.evaluate(() => document.querySelectorAll(".toast").forEach(node => node.remove()));
   await page.screenshot({ path: path.join(root, "smoke-photos.png"), fullPage: true });
   await click(page, '[data-section="archive"]');
@@ -356,7 +367,7 @@ async function loadSave(page, partial) {
   await mobile.locator(".photo-frame").first().evaluate(el => el.click());
   if (!await mobile.locator(".mobile-photo-expanded").count()) throw new Error("Mobile photo did not open fullscreen inspection");
   const mobileBackgroundSize = await mobile.locator(".mobile-photo-expanded .photo-frame").evaluate(el => getComputedStyle(el).backgroundSize);
-  if (mobileBackgroundSize !== "contain") throw new Error(`Mobile evidence photo is cropped: ${mobileBackgroundSize}`);
+  if (mobileBackgroundSize !== "cover") throw new Error(`Mobile evidence photo inspection uses an unexpected scale mode: ${mobileBackgroundSize}`);
   await click(mobile, '.mobile-photo-expanded [data-clue="footprints"]');
   await click(mobile, '[data-close-modal]');
   await click(mobile, "#mobile-menu");
