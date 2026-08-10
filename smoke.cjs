@@ -71,8 +71,12 @@ async function loadSave(page, partial) {
     ["lu", "link_lu"], ["tang", "link_tang"], ["gu", "link_gu"], ["qiu", "link_qiu"]
   ]) await inspectPerson(page, id, clue);
   await click(page, '[data-section="photos"]');
+  if (await page.locator(".photo-card").first().locator(".footprint-trail").count() !== 8) throw new Error("Bus photo does not visibly contain eight countable footprint trails");
+  if (!await page.locator(".photo-card").first().locator(".snow-ruler").isVisible()) throw new Error("Bus photo is missing a visible snow-depth ruler");
   await click(page, '[data-clue="footprints"]');
   await click(page, '[data-clue="snow_depth"]');
+  const busFindings = await page.locator(".photo-card").first().locator(".photo-findings").innerText();
+  if (!busFindings.includes("巴士外只有八组离开车辆的脚印") || !busFindings.includes("照片中的积雪只有约6厘米")) throw new Error(`Photo clue details were not retained: ${busFindings}`);
   await click(page, '[data-clue="official_photo_time"]');
   await combine(page, ["snow_depth", "official_photo_time"]);
   await combine(page, ["passenger_count", "passenger_links"]);
@@ -373,3 +377,4 @@ async function loadSave(page, partial) {
   console.error(err.stack || err);
   process.exit(1);
 });
+
