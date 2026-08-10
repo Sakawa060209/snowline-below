@@ -42,7 +42,7 @@ LIVE_URL=https://sakawa060209.github.io/snowline-below/ node smoke.cjs
 
 ## 美术
 
-主视觉、2000 班级照、2001 营地照、2003 纪录片底片和 1976 气象站合影由 OpenAI ImageGen 为本项目生成；其余界面由 HTML/CSS 绘制。
+主视觉、2004 足迹勘验照、2000 班级照、2001 营地照、2003 纪录片底片和 1976 气象站合影由 OpenAI ImageGen 为本项目生成；其余界面由 HTML/CSS 绘制。
 
 ## License
 

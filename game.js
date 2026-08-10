@@ -52,7 +52,7 @@
     guowen_identity: ["郭文身份记录异常", "乘客名单有郭文，但常住人口与联系方式均为空白。"],
     seat_gap: ["5B使用痕迹", "车辆核载十人；5B没有登记姓名，却留下长期使用与藏票痕迹。"],
     footprints: ["八组脚印", "巴士外只有八组离开车辆的脚印。"],
-    snow_depth: ["雪层厚度矛盾", "照片中的积雪只有约6厘米，与标注的23:48不符。"],
+    snow_depth: ["现场雪深约6厘米", "现场勘验附表的三个测点为5—7厘米，平均雪深约6厘米。"],
     official_photo_time: ["官方照片时间", "现场照片的归档时间被标注为23:48。"],
     original_photo_time: ["原始底片登记时间", "韩敬山留存的底片登记副本写着22:08，入库系统却显示23:48。"],
     leave_count: ["请假人数为七", "2000年12月23日，高三（2）班共有七人请假。"],
@@ -110,6 +110,7 @@
   const archiveData = [
     { id: "envelope", code: "INBOX / 000", title: "无寄件人档案袋", meta: "已拆封", initial: true },
     { id: "passengers", code: "BL04 / P-01", title: "2004巴士乘客名单与座位图", meta: "9页", initial: true },
+    { id: "snowSurvey", code: "BL04 / S-02", title: "17号公路现场雪深测量记录", meta: "勘验附表", case: "04" },
     { id: "leave", code: "BL00 / S-12", title: "高三（2）班请假登记", meta: "校方复印件", case: "00" },
     { id: "roster", code: "BL00 / S-17", title: "2000届学生编号索引", meta: "档案残页", case: "00" },
     { id: "physical", code: "BL00 / M-04", title: "白岭中学年度体检表", meta: "扫描残页", case: "00" },
@@ -496,22 +497,13 @@
   }
 
   function photoMarkup(type) {
-    if (type === "hero") {
-      const tracks = [
-        ["3%", "28%", "-31deg"], ["15%", "17%", "-23deg"], ["27%", "9%", "-15deg"], ["39%", "4%", "-7deg"],
-        ["51%", "5%", "5deg"], ["63%", "12%", "14deg"], ["75%", "21%", "23deg"], ["87%", "32%", "31deg"]
-      ];
-      return `<div class="scene-evidence" aria-hidden="true">
-        <div class="footprint-field">${tracks.map((track, index) => `<i class="footprint-trail" style="--track-x:${track[0]};--track-y:${track[1]};--track-r:${track[2]}"><span>${index + 1}</span></i>`).join("")}</div>
-        <div class="snow-ruler"><span class="ruler-ten">10</span><span class="ruler-five">5</span><span class="ruler-zero">0</span><i class="snow-line">约6 cm</i></div>
-      </div>`;
-    }
     return "";
   }
 
   function renderPhotos() {
     const photos = [
-      { id: "bus", title: "17号公路现场照片 01", meta: "BL04-PH-01 / 23:48?", metaClue: "official_photo_time", type: "hero", hot: [["footprints","70%","79%"],["snow_depth","45%","66%"]], visible: true },
+      { id: "bus", title: "17号公路现场照片 01", meta: "BL04-PH-01 / 23:48?", metaClue: "official_photo_time", type: "hero", hot: [], visible: true },
+      { id: "tracks", title: "17号公路足迹勘验照片 02", meta: "BL04-PH-02 / 未标时", type: "footprint-photo", hot: [["footprints","50%","48%"]], visible: true },
       { id: "class", title: "2000届高三（2）班合照", meta: "扫描件 / 日期不明", type: "class-photo", hot: [["class_red_scarf","72%","32%"]], visible: hasCase("00") },
       { id: "camp", title: "2001民间搜救营地", meta: "BL01-PH-05", type: "camp-photo", hot: [["five_cups","47%","39%"]], visible: hasCase("01") },
       { id: "film", title: "纪录片底片 C-12", meta: "BL03-NG-C12", type: "film-photo", hot: [["photo_seventh","88%","40%"]], visible: hasCase("03") },
@@ -521,7 +513,7 @@
     const canCompare1976 = hasClue("photo_1976_boy") && hasClue("guowen_red_scarf");
     return `<p class="section-lead">照片没有可见的调查圈。点击你认为异常的物件或人物；详细提示开启后，系统才会标出大致区域。已发现的观察内容会保留在照片下方。</p><div class="photo-grid ${state.hintLevel >= 2 ? "detailed-hints" : ""}">${photos.map(p => {
       const findings = (p.hot || []).filter(([id]) => hasClue(id));
-      return `<article class="photo-card">
+      return `<article class="photo-card" data-photo-id="${p.id}">
       <div class="photo-frame ${p.type}">${photoMarkup(p.type)}${(p.hot || []).map(h => {
         const found = hasClue(h[0]);
         return `<button class="hotspot ${found ? "found" : ""}" style="left:${h[1]};top:${h[2]}" data-clue="${h[0]}" aria-label="${found ? clueData[h[0]][0] : "检查照片细节"}">${found ? `✓ ${clueData[h[0]][0]}` : ""}</button>`;
@@ -569,6 +561,7 @@
     const bodies = {
       envelope: `<p>2005年1月19日，林川收到一个没有寄件人的档案袋。</p><ul><li>2004年巴士现场照片一张</li><li>巴士乘客名单一份</li><li>2000届旧学生合照一张</li><li>手写纸条一张</li></ul><p class="document-note">不要数他们。</p><p>四份材料背面似乎都有相同的蓝色铅笔批注，但数字被水渍覆盖，只能辨认：<b>__ : 47</b>。</p>${envelopeSeal}`,
       passengers: `<table><tr><th>座位</th><th>姓名</th><th>年龄</th><th>职业</th></tr><tr><td>1A</td><td>周启明</td><td>36</td><td>司机</td></tr><tr><td>1B</td><td>林雪</td><td>25</td><td>教师</td></tr><tr><td>2A</td><td>罗诚</td><td>25</td><td>个体经营</td></tr><tr><td>2B</td><td>韩敬山</td><td>51</td><td>退休</td></tr><tr><td>3A</td><td>陆文山</td><td>48</td><td>医生</td></tr><tr><td>3B</td><td>唐国辉</td><td>52</td><td>机械工</td></tr><tr><td>4A</td><td>顾宁</td><td>31</td><td>图书管理员</td></tr><tr><td>4B</td><td>邱明</td><td>34</td><td>记者</td></tr><tr><td>5A</td><td>郭文</td><td>不详</td><td>不详</td></tr><tr><td>${inspectButton("seat_gap","5B")}</td><td>—</td><td>—</td><td>椅面磨损</td></tr></table><p>本次登记乘客：${inspectButton("passenger_count","9名")}</p>${seatRecheck}`,
+      snowSurvey: `<p>白岭县公安局 · 17号公路现场勘验附表</p><table><tr><th>测点</th><th>位置</th><th>雪深</th></tr><tr><td>A</td><td>巴士车门外侧</td><td>6 cm</td></tr><tr><td>B</td><td>道路北侧路肩</td><td>7 cm</td></tr><tr><td>C</td><td>排水沟边缘</td><td>5 cm</td></tr></table><p>三个测点未见明显二次覆盖，现场平均雪深记录为${inspectButton("snow_depth","约6厘米")}。</p><p class="document-note">附表填写时间：22:16。照片入库系统随后将现场照片标注为23:48。</p>`,
       leave: `<p>白岭中学高三（2）班 · 2000年12月23日请假登记</p><table><tr><th>项目</th><th>人数</th></tr><tr><td>集体外出请假</td><td>${inspectButton("leave_count","7")}</td></tr><tr><td>已返校</td><td>2</td></tr><tr><td>警方记录失踪</td><td>4</td></tr></table><p>班主任签字处被重新覆盖。附页中，林雪与罗诚的两份口供都在${inspectButton("time_2000","19:47")}处中断。</p>`,
       roster: `<p>学生编号索引（残页）</p><table><tr><th>学号</th><th>姓名</th></tr><tr><td>15</td><td>林雪</td></tr><tr><td>16</td><td>罗诚</td></tr><tr><td>${inspectButton("missing17","17")}</td><td class="redaction">郭文</td></tr><tr><td>18</td><td>方敏</td></tr><tr><td>19</td><td>陈浩</td></tr></table><p>第17号原始卡片已从档案夹中抽走。</p>`,
       physical: `<p>2000年度学生体格检查表 · 复印残页</p><table><tr><th>编号</th><th>姓名</th><th>出生年</th><th>身高</th></tr><tr><td>17</td><td>${inspectButton("health_guowen","郭文")}</td><td>1983</td><td>171cm</td></tr></table><p>备注：左颈部有旧冻伤；检查时佩戴红色围巾。</p>`,
@@ -742,7 +735,7 @@
     if (!hasEvidence("EV02")) return ["2000年的官方口径是六人，但学校系统并不完全同意。", "对照请假人数、连续学号与体检记录。", "资料库的三份2000学校档案分别提供三条所需线索。"];
     if (!hasEvidence("EV04")) return ["生活痕迹和装备数量说的是两种人数。", "检查2001营地勘验与物资领用表。", "组合‘第五只杯子’与‘四人份物资’。"];
     if (!hasEvidence("EV07") || !hasEvidence("EV08")) return ["先确认摄影团队本应有多少人，再观察底片边缘。", "在2000班级照后排和2003底片右侧树林里寻找相同颜色。", "分别记录两张照片中的人影，然后使用照片页出现的‘对比’操作。"];
-    if (!hasEvidence("EV13") || !hasEvidence("EV15")) return ["照片标注的时间，和雪的厚度能同时成立吗？标注不可信不等于相机一定损坏。", "在时间线解锁后查气象记录；旧网页恢复后，韩敬山便笺中还有原始底片登记副本。", "雪层厚度＋气象记录可证明标注不可信；官方入库时间＋原始底片时间可继续判断是否有人为改写。私人便笺的‘8’还能与脚印组合。"];
+    if (!hasEvidence("EV13") || !hasEvidence("EV15")) return ["现场照片的标注时间，和书面勘验记录能同时成立吗？标注不可信不等于相机一定损坏。", "先查2004案的雪深测量附表，再到气象记录核对逐时雪深；韩敬山便笺中还有原始底片登记副本。", "现场雪深＋气象记录可证明标注不可信；官方入库时间＋原始底片时间可继续判断是否有人为改写。私人便笺的‘8’还能与独立足迹照片组合。"];
     if (!hasEvidence("EV16")) return ["有一个时间出现在每起案件里，但开场材料只剩下分钟数。", "分别检查2000口供、2001营地笔记、2003底片附件和2004无线电抄件，再到时间线主动比对。", "四案确认后记录‘跨案件时间’，再检索‘白岭 19:47’寻找早于四案的独立记录。"];
     if (!hasEvidence("EV18")) {
       if (!hasDoc("facility")) return ["三处案发地点也许不是彼此独立。", "从旧网页检索北山的地下设施或维护通道。", "组合地点名称‘北山’与设施类型‘地下设施’，恢复1974维护图。"];
