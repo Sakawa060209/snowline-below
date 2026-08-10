@@ -77,10 +77,13 @@ async function loadSave(page, partial) {
   await click(page, '[data-photo-id="tracks"] [data-open-photo="tracks"]');
   const enlargedWidth = (await page.locator(".photo-inspection-expanded .photo-frame").boundingBox()).width;
   if (enlargedWidth <= photoCardWidth + 80) throw new Error(`Desktop photo did not enlarge for inspection: ${photoCardWidth} -> ${enlargedWidth}`);
+  const enlargedBackgroundSize = await page.locator(".photo-inspection-expanded .photo-frame").evaluate(el => getComputedStyle(el).backgroundSize);
+  if (enlargedBackgroundSize !== "contain") throw new Error(`Enlarged evidence photo should preserve the full image with contain, got ${enlargedBackgroundSize}`);
   await click(page, '.photo-inspection-expanded [data-clue="footprints"]');
   await click(page, '.photo-inspection-expanded [data-close-modal]');
   const trackFindings = await page.locator('[data-photo-id="tracks"] .photo-findings').innerText();
-  if (!trackFindings.includes("巴士外只有八组离开车辆的脚印")) throw new Error(`Footprint photograph did not retain its observation: ${trackFindings}`);
+  if (!trackFindings.includes("观察01 · 八组脚印") || !trackFindings.includes("巴士外只有八组离开车辆的脚印")) throw new Error(`Footprint photograph did not retain its numbered observation: ${trackFindings}`);
+  if ((await page.locator('[data-photo-id="tracks"] .hotspot.found').innerText()).trim() !== "01 ✓") throw new Error("Discovered photo hotspot still covers the image with its full clue text");
   await click(page, '[data-section="archive"]');
   await click(page, '[data-doc="snowSurvey"]');
   const snowSurveyText = await page.locator(".document-body").innerText();
@@ -120,8 +123,15 @@ async function loadSave(page, partial) {
   await click(page, '[data-doc="passengers"]');
   await click(page, '[data-hidden="H03"]');
   await click(page, ".modal-close");
+  await click(page, '[data-section="web"]');
+  if (!(await page.locator("#search-input").getAttribute("placeholder")).includes("关键词或组合词")) throw new Error("Old web search instructions still require two or more keywords");
   await search(page, "许 白岭 2004");
   if (!(await page.locator(".search-result").first().innerText()).includes("2004-12-18")) throw new Error("The erased Xu passenger cache was not recovered");
+  let xuState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (!xuState.clues.includes("ticket_xu") || !xuState.clues.includes("xu_deleted")) throw new Error("Xu ticket and deleted index did not become independently usable clues");
+  await combine(page, ["S01", "ticket_xu", "xu_deleted"]);
+  xuState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (!xuState.hypotheses.includes("S03")) throw new Error("S01 + Xu ticket + deleted index did not form the tenth passenger record conclusion");
 
   await openDoc(page, "weather", ["weather_record"]);
   await combine(page, ["snow_depth", "weather_record"]);
@@ -191,6 +201,13 @@ async function loadSave(page, partial) {
   if (preFinalState.finalStarted) throw new Error("Cancelling final confirmation froze the investigation");
   await click(page, "[data-confirm-final]");
   await click(page, "[data-start-final]");
+  await click(page, '[data-section="notes"]');
+  await click(page, "[data-hint]");
+  await click(page, "[data-hint]");
+  if (!(await page.locator(".hint-card").innerText()).includes("最终调查仍可能恢复少量关键档案")) throw new Error("Final-stage hint still claims the truth tier can no longer change");
+  await click(page, '[data-section="final"]');
+  const finalTypes = await page.locator(".final-type").allInnerTexts();
+  if (!["历史断点", "实验来源", "人物动机", "身份冲突", "人为掩盖"].every(label => finalTypes.includes(label))) throw new Error(`Final investigation type labels are incomplete: ${finalTypes}`);
   for (const id of ["1976", "han", "witness"]) {
     await click(page, `[data-final-choice="${id}"]`);
     if (await page.locator(".action-result").count()) throw new Error(`Final action ${id} leaked content before consumption`);
@@ -202,9 +219,12 @@ async function loadSave(page, partial) {
   const ending = await page.locator(".ending h2").textContent();
   if (!ending.includes("雪线以下")) throw new Error(`Expected true ending, got ${ending}`);
   if (await page.locator(".ending-tail").count() !== 3) throw new Error("Expected one ending tail for each final action");
+  if (await page.locator(".ending-basis .basis-row.confirmed").count() !== 4) throw new Error("True ending did not explain all four confirmed investigation directions");
   if (!(await page.locator("#investigator-label").textContent()).includes("郭文")) throw new Error("True ending did not replace the investigator name");
   if (!(await page.locator("#hidden-count").textContent()).includes("3 / 3")) throw new Error("Post-ending archive completion was not revealed");
   if ((await page.locator("[data-review]").innerText()).trim() !== "查看已收集档案") throw new Error("Ending archive action is still described as returning to the investigation");
+  const completedMeta = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-meta")));
+  if (!completedMeta.unlockedDispositions.includes("witness")) throw new Error("Final disposition was not preserved in the cross-playthrough archive");
   let resetPrompt = "";
   page.once("dialog", async dialog => { resetPrompt = dialog.message(); await dialog.dismiss(); });
   await click(page, "[data-reset]");
@@ -281,6 +301,15 @@ async function loadSave(page, partial) {
     if (!(await logic.locator(".ending h2").innerText()).includes(tier.title)) throw new Error(`Truth tier unreachable: ${tier.title}`);
   }
 
+  await loadSave(logic, { section: "final", unlockedCases: ["04", "05"], unlockedSystems: ["final"], case05Stage: 3, finalStarted: true, evidence: ["EV01", "EV10", "EV02", "EV04"], hidden: [], hypotheses: [], finalChoices: ["han", "guowen", "publish"], ending: null });
+  await click(logic, "[data-resolve-final]");
+  let publishTail = await logic.locator(".ending-tail").filter({ hasText: "传播" }).innerText();
+  if (!publishTail.includes("人数异常") || publishTail.includes("第十")) throw new Error(`Publish ending leaked the undiscovered tenth passenger: ${publishTail}`);
+  await loadSave(logic, { section: "final", unlockedCases: ["04", "05"], unlockedSystems: ["final"], case05Stage: 3, finalStarted: true, evidence: ["EV01", "EV10", "EV02", "EV04"], hidden: ["H03"], hypotheses: ["S03"], finalChoices: ["han", "guowen", "publish"], ending: null });
+  await click(logic, "[data-resolve-final]");
+  publishTail = await logic.locator(".ending-tail").filter({ hasText: "传播" }).innerText();
+  if (!publishTail.includes("第十名乘客")) throw new Error(`Publish ending did not reflect the discovered tenth passenger record: ${publishTail}`);
+
   await logic.evaluate(() => localStorage.setItem("snowline-below-save-v2", JSON.stringify({
     version: 2,
     section: "evidence",
@@ -335,12 +364,12 @@ async function loadSave(page, partial) {
   const metaPage = await metaContext.newPage();
   metaPage.setDefaultNavigationTimeout(45000);
   await metaPage.goto(url, { waitUntil: "domcontentloaded" });
-  await metaPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"] })));
+  await metaPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"], unlockedDispositions: ["seal"] })));
   await metaPage.reload({ waitUntil: "domcontentloaded" });
   if ((await metaPage.locator("#ending-archive").innerText()).trim() !== "调查记录 1 / 4") throw new Error("Title screen did not expose ending archive progress");
   await click(metaPage, "#ending-archive");
   const archiveText = await metaPage.locator("#modal-content").innerText();
-  if (!archiveText.includes("雪线以下") || (archiveText.match(/\?\?\?/g) || []).length !== 3) throw new Error(`Ending archive slots are incorrect: ${archiveText}`);
+  if (!archiveText.includes("雪线以下") || (archiveText.match(/\?\?\?/g) || []).length !== 3 || !archiveText.includes("☑\n封存")) throw new Error(`Ending archive slots or disposition records are incorrect: ${archiveText}`);
   await click(metaPage, ".modal-close");
   await click(metaPage, "#new-game");
   await click(metaPage, ".modal-close");
@@ -387,7 +416,7 @@ async function loadSave(page, partial) {
   await mobile.locator('[data-photo-id="tracks"] .photo-frame').evaluate(el => el.click());
   if (!await mobile.locator(".mobile-photo-expanded").count()) throw new Error("Mobile photo did not open fullscreen inspection");
   const mobileBackgroundSize = await mobile.locator(".mobile-photo-expanded .photo-frame").evaluate(el => getComputedStyle(el).backgroundSize);
-  if (mobileBackgroundSize !== "cover") throw new Error(`Mobile evidence photo inspection uses an unexpected scale mode: ${mobileBackgroundSize}`);
+  if (mobileBackgroundSize !== "contain") throw new Error(`Mobile evidence photo inspection should preserve the full image with contain, got ${mobileBackgroundSize}`);
   await click(mobile, '.mobile-photo-expanded [data-clue="footprints"]');
   await click(mobile, '[data-close-modal]');
   await click(mobile, "#mobile-menu");
