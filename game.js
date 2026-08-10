@@ -71,6 +71,9 @@
     forecast_eight: ["提前写下的八", "韩敬山在现场勘验前就写下‘乘客9，脚印8’。"],
     case_times: ["四案时间摘录", "四起案件的原始材料都留下了一个精确时刻。"],
     repeated_time: ["1988年的19:47异常", "1988年白岭电网事故也在19:47出现持续七分钟的异常负载，早于四起失踪案。"],
+    ame_partial: ["模糊项目编号 AME-?", "1974维护图的后期批注写着：1991年12月，B区重新启用，用途为环境适应观察，项目编号AME-?。"],
+    experiment_seven: ["韩敬山提到7号实验", "韩敬山便笺夹页只留下一句：‘不要再查那个7号实验。’"],
+    ame_code: ["完整项目编号 AME-7", "维护图中的AME-?与韩敬山所说的7号实验指向同一完整编号：AME-7。"],
     ame_report: ["AME-7记录", "实验组报告：六名成员一致记得现场有第七人郭文。"],
     extra_member: ["实验组人数减少", "附加成员报告之后，实验组登记人数与受试者记忆同时发生减少。"],
     facility: ["地下设施通道", "旧气象站、17号公路与2001营地通过废弃维护道相连。"],
@@ -98,6 +101,10 @@
     { id: "HX02", title: "郭文由AME-7实验产生", needs: ["ame_report", "extra_member"], text: "暂时假设：郭文是附加成员实验造成的认知投射。", blockedBy: "H01" },
     { id: "S01", title: "5B曾有未登记乘客", needs: ["passenger_count", "seat_gap"], text: "巴士名单只登记九人，但5B的使用痕迹说明还存在一名未被记录的乘客。", support: true },
     { id: "S02", title: "现场照片时间遭人为修改", needs: ["official_photo_time", "original_photo_time"], text: "原始底片登记为22:08，入库时间却被改成23:48；相机本身并没有走快。", support: true }
+  ];
+
+  const discoveryRecipes = [
+    { id: "ame_code", title: "复原项目编号：AME-7", needs: ["ame_partial", "experiment_seven"], text: "维护图的模糊编号与韩敬山的夹页批注补全了同一个检索词。" }
   ];
 
   const archiveData = [
@@ -569,9 +576,9 @@
       supplies: `<p>北山民间搜救队 · 物资领用</p><table><tr><th>姓名</th><th>背包</th><th>睡袋</th></tr><tr><td>周启明</td><td>1</td><td>1</td></tr><tr><td>苏琴</td><td>1</td><td>1</td></tr><tr><td>高远</td><td>1</td><td>1</td></tr><tr><td>方志远</td><td>1</td><td>1</td></tr></table><p>物资合计：${inspectButton("four_supplies","4套装备")}。没有额外领用签字。</p>`,
       crew: `<p>《白岭以后》纪录片摄制合同</p><table><tr><th>姓名</th><th>职责</th></tr><tr><td>陈垣</td><td>导演</td></tr><tr><td>唐慧</td><td>制片</td></tr><tr><td>顾晨</td><td>摄影</td></tr><tr><td>李泽</td><td>录音</td></tr><tr><td>孟兰</td><td>研究</td></tr><tr><td>赵航</td><td>司机</td></tr></table><p>合同签约成员：${inspectButton("team_six","6名")}。旅馆附件中夹着${inspectButton("meal_seven","连续三晚的七份套餐发票")}。底片登记表注明，C-12曝光时间为${inspectButton("time_2003","19:47")}。</p>`,
       weather: `<p>北山气象观测站 · 逐时雪深</p><table><tr><th>时间</th><th>雪深</th></tr><tr><td>21:00</td><td>4cm</td></tr><tr><td>${inspectButton("weather_record","22:00")}</td><td>6cm</td></tr><tr><td>23:00</td><td>9cm</td></tr><tr><td>00:00</td><td>13cm</td></tr></table>`,
-      memo: `<p>韩敬山私人便笺，纸张日期早于现场发现约九小时。</p><p class="document-note">17号路。乘客9。${inspectButton("forecast_eight","脚印8")}。不要让他们再次点名。</p><p>随便笺附存的无线电抄件显示，巴士在${inspectButton("time_2004","19:47")}后停止回应。</p><p>夹在末页的底片登记副本仍写着${inspectButton("original_photo_time","22:08") }，旁边注明：相机已于当日校时；系统入库值为23:48。</p>`,
+      memo: `<p>韩敬山私人便笺，纸张日期早于现场发现约九小时。</p><p class="document-note">17号路。乘客9。${inspectButton("forecast_eight","脚印8")}。不要让他们再次点名。</p><p>随便笺附存的无线电抄件显示，巴士在${inspectButton("time_2004","19:47")}后停止回应。</p><p>夹在末页的底片登记副本仍写着${inspectButton("original_photo_time","22:08") }，旁边注明：相机已于当日校时；系统入库值为23:48。</p><p class="document-note">便笺夹页背面另有一句被反复划掉的话：${inspectButton("experiment_seven","不要再查那个7号实验。")}</p>`,
       ame: `<p>附加成员效应观察 · AME-7 · 1991/12/19</p><p>${inspectButton("ame_report","六名受试者在19:47后均报告：实验室自始至终有第七名成员，姓名为“郭文”。")}监控画面无法确认该成员进入过程。</p><p>${inspectButton("extra_member","次日复测仅能确认五名受试者。第六人的姓名在花名册中缺失，其余受试者均否认曾存在第六人。")} </p>`,
-      facility: `<p>北山废弃维护通道图 · 1974</p><p>${inspectButton("facility","三条封闭支路分别通向北山气象站、17号公路旧涵洞与白岭北坡临时营地。")}</p>`
+      facility: `<p>北山废弃维护通道图 · 1974</p><p>${inspectButton("facility","三条封闭支路分别通向北山气象站、17号公路旧涵洞与白岭北坡临时营地。")}</p><div class="document-note"><b>后期手写批注</b><br>1991年12月<br>B区重新启用<br>用途：环境适应观察<br>项目：${inspectButton("ame_partial","AME-?") }<br><small>最后一位数字因水渍无法辨认。</small></div>`
     };
     openModal(`<article class="document"><header class="document-head"><small>${d.code}</small><h2>${d.title}</h2></header><div class="document-body">${bodies[id] || "<p>文档损坏。</p>"}</div></article>`);
     save();
@@ -601,8 +608,14 @@
       toast("照片缓存恢复", "1976年气象站冬季合影已加入照片库");
     }
     else if (q.includes("红围巾") || q.includes("郭文")) type = "refine_red";
-    else if (q.includes("ame7")) { type = "ame"; addUnique(state.unlockedDocs, "ame"); toast("缓存恢复", "AME-7观察报告已加入资料库"); }
-    else if (q.includes("附加成员")) type = "refine_ame";
+    else if (q.includes("ame7")) {
+      if (hasClue("ame_code") || hasDoc("ame") || hasClue("ame_report")) {
+        type = "ame";
+        addUnique(state.unlockedDocs, "ame");
+        toast("缓存恢复", "AME-7观察报告已加入资料库");
+      } else type = "locked_ame";
+    }
+    else if (q.includes("附加成员") || q.includes("ame")) type = "refine_ame";
     else if (q.includes("北山") && (q.includes("地下") || q.includes("维护通道"))) { type = "facility"; addUnique(state.unlockedDocs, "facility"); toast("地图恢复", "北山废弃维护通道图已加入资料库"); }
     else if (q.includes("地下") || q.includes("维护通道")) type = "refine_facility";
     const entry = { query, type, time: Date.now() };
@@ -618,7 +631,8 @@
       time: ["[缓存] 1988年白岭电网事故简报", "北山线路在19:47出现持续七分钟的异常负载，保护装置却没有记录短路。该记录早于四起失踪案。"],
       "1976": ["[缓存] 北山气象站冬季合影", "一张受损的旧合影已经恢复到照片库。索引页没有人物姓名，需在照片中自行检查。"],
       ame: ["AME-7：附加成员效应观察", "来自已关闭研究所的目录页。完整报告已恢复到资料库。"],
-      facility: ["北山气象站维护工程图", "旧气象站、17号公路和2001营地并非三个独立地点。地图已恢复到资料库。"],
+      facility: ["北山气象站维护工程图", "旧气象站、17号公路和2001营地并非三个独立地点。1974维护图已恢复到资料库，图纸底部似乎有后期手写批注。"],
+      locked_ame: ["项目目录无法定位", "当前资料中尚未建立完整项目编号。请先从原始档案复原编号，再重新检索。"],
       refine_time: ["结果过多：19:47", "时间无法单独定位档案。请加入案件地点，例如“白岭”或“北山”。"],
       refine_red: ["图像索引未定位", "人物特征过于宽泛。请把“红围巾”或姓名与案件地点组合检索。"],
       refine_ame: ["项目索引残损", "“附加成员”只出现在损坏目录中。请查找完整项目编号。"],
@@ -650,7 +664,7 @@
   function renderEvidence() {
     const timelineOnly = ["time_2000", "time_2001", "time_2003", "time_2004"];
     const supplemental = ["camp_five_depressions", "meal_seven"];
-    const boardClues = state.clues.filter(id => !id.startsWith("link_") && !["guowen_identity", "class_red_scarf", "photo_1976_boy", ...timelineOnly, ...supplemental].includes(id));
+    const boardClues = state.clues.filter(id => !id.startsWith("link_") && !["guowen_identity", "class_red_scarf", "photo_1976_boy", "ame_code", ...timelineOnly, ...supplemental].includes(id));
     state.selected = state.selected.filter(id => boardClues.includes(id));
     const selected = state.selected;
     const evidenceCards = recipes.filter(r => hasEvidence(r.id));
@@ -658,7 +672,7 @@
     return `<p class="section-lead">选择2—3条已发现线索，尝试建立结论。无效组合不会损失进度。</p><div class="evidence-layout">
       <section class="clue-bank"><h3>可用于推理的线索 · ${boardClues.length}</h3><div class="clue-chips">${boardClues.length ? boardClues.map(id => `<button class="clue-chip ${selected.includes(id) ? "selected" : ""}" data-select-clue="${id}"><b>${clueData[id][0]}</b><br>${clueData[id][1]}</button>`).join("") : `<span class="section-lead">检查照片、人物与文档以记录线索。</span>`}</div></section>
       <section class="conclusion-panel"><h3>推理槽</h3><div class="combine-tray ${selected.length ? "" : "empty"}">${selected.map(id => `<button class="clue-chip selected" data-select-clue="${id}">${clueData[id][0]}</button>`).join("")}</div><button class="combine-btn" data-combine ${selected.length < 2 ? "disabled" : ""}>建立结论</button></section>
-    </div><div class="evidence-cards">${evidenceCards.map(r => `<article class="evidence-card"><span class="ev-code">EVIDENCE ${String(recipes.indexOf(r) + 1).padStart(2, "0")} / ${recipes.length}</span><h4>${r.title}</h4><p>${r.text}</p></article>`).join("")}</div>
+    </div>${hasClue("ame_code") ? `<article class="keyword-recovery"><span class="ev-code">RECOVERED SEARCH KEY</span><b>AME-7</b><p>完整项目编号已经复原。前往旧网页索引检索该编号。</p></article>` : ""}<div class="evidence-cards">${evidenceCards.map(r => `<article class="evidence-card"><span class="ev-code">EVIDENCE ${String(recipes.indexOf(r) + 1).padStart(2, "0")} / ${recipes.length}</span><h4>${r.title}</h4><p>${r.text}</p></article>`).join("")}</div>
       ${hypotheses.length ? `<h3>调查假设</h3><div class="evidence-cards">${hypotheses.map(h => {
         const overturned = state.overturned.includes(h.id);
         const status = h.support ? "辅助推论" : overturned ? "已推翻" : "暂定";
@@ -671,8 +685,17 @@
     const selected = [...state.selected].sort();
     const match = recipes.find(r => !hasEvidence(r.id) && r.needs.length === selected.length && [...r.needs].sort().every((x,i) => x === selected[i]));
     const hypothesis = hypothesisRecipes.find(r => !state.hypotheses.includes(r.id) && r.needs.length === selected.length && [...r.needs].sort().every((x,i) => x === selected[i]));
-    if (!match && !hypothesis) {
+    const discovery = discoveryRecipes.find(r => !hasClue(r.id) && r.needs.length === selected.length && [...r.needs].sort().every((x,i) => x === selected[i]));
+    if (!match && !hypothesis && !discovery) {
       toast("无法建立结论", "这些线索之间缺少直接联系。尝试对照人数、时间或同一人物。" );
+      return;
+    }
+    if (discovery) {
+      state.clues.push(discovery.id);
+      state.selected = [];
+      toast("检索词复原", discovery.title, "evidence");
+      save();
+      render();
       return;
     }
     if (hypothesis) {
@@ -709,7 +732,7 @@
       [hasEvidence("EV07") && hasEvidence("EV08"), "识别2003照片里的红围巾少年"],
       [hasEvidence("EV13") && hasEvidence("EV15"), "确认2004现场时间异常与提前记录"],
       [hasEvidence("EV16"), "解释四案共同出现的19:47"],
-      [hasEvidence("EV18"), "找到AME-7的附加成员记录"]
+      [hasEvidence("EV18"), "复原AME-7编号并找到附加成员记录"]
     ];
   }
 
@@ -721,7 +744,14 @@
     if (!hasEvidence("EV07") || !hasEvidence("EV08")) return ["先确认摄影团队本应有多少人，再观察底片边缘。", "在2000班级照后排和2003底片右侧树林里寻找相同颜色。", "分别记录两张照片中的人影，然后使用照片页出现的‘对比’操作。"];
     if (!hasEvidence("EV13") || !hasEvidence("EV15")) return ["照片标注的时间，和雪的厚度能同时成立吗？标注不可信不等于相机一定损坏。", "在时间线解锁后查气象记录；旧网页恢复后，韩敬山便笺中还有原始底片登记副本。", "雪层厚度＋气象记录可证明标注不可信；官方入库时间＋原始底片时间可继续判断是否有人为改写。私人便笺的‘8’还能与脚印组合。"];
     if (!hasEvidence("EV16")) return ["有一个时间出现在每起案件里，但开场材料只剩下分钟数。", "分别检查2000口供、2001营地笔记、2003底片附件和2004无线电抄件，再到时间线主动比对。", "四案确认后记录‘跨案件时间’，再检索‘白岭 19:47’寻找早于四案的独立记录。"];
-    if (!hasEvidence("EV18")) return ["‘附加成员’像实验术语，而三处案发地点也可能不是彼此独立。", "分别检索档案中的项目编号与北山地下设施。", "打开恢复的 AME-7 报告和维护通道图，三条线索共同组成结论。"];
+    if (!hasEvidence("EV18")) {
+      if (!hasDoc("facility")) return ["三处案发地点也许不是彼此独立。", "从旧网页检索北山的地下设施或维护通道。", "组合地点名称‘北山’与设施类型‘地下设施’，恢复1974维护图。"];
+      if (!hasClue("ame_partial")) return ["1974维护图在多年后被人重新使用过。", "检查图纸底部的后期手写批注。", "记录水渍覆盖的项目编号‘AME-?’。"];
+      if (!hasClue("experiment_seven")) return ["模糊编号的最后一位数字也许在其他调查者的记录里。", "复查韩敬山私人便笺的夹页背面。", "记录他划掉的‘7号实验’。"];
+      if (!hasClue("ame_code")) return ["两条残缺记录描述的可能是同一个项目。", "把‘AME-?’与‘7号实验’放进证据板。", "组合两条线索，复原完整检索词。"];
+      if (!hasDoc("ame")) return ["你已经得到一个完整项目编号。", "旧网页索引只会响应资料中已经复原的专有名词。", "检索‘AME-7’，恢复观察报告。"];
+      return ["报告与维护通道图还没有形成地点关联。", "分别记录报告中的两处异常和维护图的通道信息。", "组合AME-7记录、实验组人数减少与地下设施通道。"];
+    }
     return ["CASE 05已经出现。你可以继续调查，也可以从案件页主动进入不可回头的最后15分钟。", "进入前建议复查雪层、韩敬山便笺、1976旧照、档案袋夹层与5B座位。", "最高调查层级必须完成雪深与气象记录的推理，并包含红围巾疑似同一人、提前记录、19:47规律、AME-7地点关联和1976身份冲突。"];
   }
 

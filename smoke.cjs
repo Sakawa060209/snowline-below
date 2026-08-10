@@ -117,7 +117,7 @@ async function loadSave(page, partial) {
 
   await openDoc(page, "weather", ["weather_record"]);
   await combine(page, ["snow_depth", "weather_record"]);
-  await openDoc(page, "memo", ["forecast_eight", "time_2004", "original_photo_time"]);
+  await openDoc(page, "memo", ["forecast_eight", "time_2004", "original_photo_time", "experiment_seven"]);
   await combine(page, ["official_photo_time", "original_photo_time"]);
   await combine(page, ["forecast_eight", "footprints"]);
 
@@ -129,10 +129,22 @@ async function loadSave(page, partial) {
   await combine(page, ["case_times", "repeated_time"]);
 
   await search(page, "AME-7");
+  let ameChainState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (ameChainState.unlockedDocs.includes("ame")) throw new Error("Direct AME-7 search bypassed the two-step discovery chain");
+  if (!(await page.locator(".search-result").first().innerText()).includes("尚未建立完整项目编号")) throw new Error("Premature AME-7 search did not explain the missing project number");
   await search(page, "北山 地下设施");
+  await openDoc(page, "facility", ["facility", "ame_partial"]);
+  ameChainState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (!ameChainState.clues.includes("ame_partial") || !ameChainState.clues.includes("experiment_seven")) throw new Error("AME-7 source fragments were not independently discoverable");
+  await combine(page, ["ame_partial", "experiment_seven"]);
+  ameChainState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (!ameChainState.clues.includes("ame_code")) throw new Error("AME-? plus experiment 7 did not reconstruct AME-7");
+  if (!(await page.locator(".keyword-recovery").innerText()).includes("AME-7")) throw new Error("Recovered AME-7 search key was not shown to the player");
+  await search(page, "AME-7");
+  ameChainState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (!ameChainState.unlockedDocs.includes("ame")) throw new Error("Reconstructed AME-7 search did not unlock the report");
   await openDoc(page, "ame", ["ame_report", "extra_member"]);
   await combine(page, ["ame_report", "extra_member"]);
-  await openDoc(page, "facility", ["facility"]);
   await combine(page, ["ame_report", "extra_member", "facility"]);
 
   const count = await page.locator("#evidence-count").textContent();
