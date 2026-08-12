@@ -63,6 +63,8 @@ async function loadSave(page, partial) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await click(page, "#new-game");
   await click(page, ".modal-close");
+  const openingLine = await page.locator(".current-line").innerText();
+  if (!openingLine.includes("车上究竟登记了多少人") || !openingLine.includes("查看乘客名单")) throw new Error(`Opening investigation line is not actionable: ${openingLine}`);
   await click(page, '[data-section="evidence"]');
   let directionText = await page.locator(".investigation-directions").innerText();
   if (!directionText.includes("暴雪事故") || directionText.includes("地下实验") || directionText.includes("第七人")) throw new Error(`Opening investigation directions leaked future explanations: ${directionText}`);
@@ -128,6 +130,8 @@ async function loadSave(page, partial) {
   await click(page, '[data-compare-photos]');
   await combine(page, ["team_six", "photo_seventh"]);
   await combine(page, ["photo_seventh", "guowen_red_scarf"]);
+  const revisitLine = await page.locator(".current-line").innerText();
+  if (!revisitLine.includes("重新检查最初的2004现场") || !revisitLine.includes("复查2004资料")) throw new Error(`Post-EV08 route did not return the player to 2004: ${revisitLine}`);
 
   await click(page, '[data-section="archive"]');
   await click(page, '[data-doc="passengers"]');
@@ -162,6 +166,15 @@ async function loadSave(page, partial) {
   const afterTimeSearch = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!afterTimeSearch.clues.includes("repeated_time")) throw new Error(`Time search failed: ${JSON.stringify(afterTimeSearch.searches)}`);
   await combine(page, ["case_times", "repeated_time"]);
+
+  await click(page, '[data-section="notes"]');
+  const notesText = await page.locator("#content").innerText();
+  if (!notesText.includes("导航提示 · 不揭示答案") || !notesText.includes("调查目标") || !notesText.includes("北山 地下设施")) throw new Error(`Investigation notes did not separate navigation and detailed hints: ${notesText}`);
+  const searchCountBeforeFill = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).searches.length);
+  await click(page, '[data-search-term="北山 地下设施"]');
+  if (await page.locator("#search-input").inputValue() !== "北山 地下设施") throw new Error("Known search term did not populate the search field");
+  const searchCountAfterFill = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).searches.length);
+  if (searchCountAfterFill !== searchCountBeforeFill) throw new Error("Known search term executed a search instead of only filling the field");
 
   await search(page, "AME-7");
   let ameChainState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
