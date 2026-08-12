@@ -63,6 +63,9 @@ async function loadSave(page, partial) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await click(page, "#new-game");
   await click(page, ".modal-close");
+  await click(page, '[data-section="evidence"]');
+  let directionText = await page.locator(".investigation-directions").innerText();
+  if (!directionText.includes("暴雪事故") || directionText.includes("地下实验") || directionText.includes("第七人")) throw new Error(`Opening investigation directions leaked future explanations: ${directionText}`);
 
   await openDoc(page, "passengers", ["passenger_count", "seat_gap"]);
   await inspectPerson(page, "guowen", "guowen_identity");
@@ -98,6 +101,8 @@ async function loadSave(page, partial) {
   await combine(page, ["snow_depth", "official_photo_time"]);
   await combine(page, ["passenger_count", "passenger_links"]);
   await combine(page, ["passenger_count", "footprints"]);
+  directionText = await page.locator(".investigation-directions").innerText();
+  if (!directionText.includes("未知人为因素？") || directionText.includes("地下实验") || directionText.includes("第七人")) throw new Error(`First count contradiction did not reveal only an unnamed direction: ${directionText}`);
 
   await openDoc(page, "leave", ["leave_count", "time_2000"]);
   await openDoc(page, "roster", ["missing17"]);
@@ -105,6 +110,10 @@ async function loadSave(page, partial) {
   await combine(page, ["leave_count", "missing17", "health_guowen"]);
 
   await openDoc(page, "camp", ["five_cups", "camp_five_depressions", "time_2001"]);
+  await click(page, '[data-section="archive"]');
+  await click(page, '[data-doc="camp"]');
+  if (!(await page.locator(".document-body").innerText()).includes("废弃维修井")) throw new Error("No natural maintenance-structure keyword was seeded before the facility search");
+  await click(page, ".modal-close");
   await click(page, '[data-section="cases"]');
   await click(page, '[data-case="01"]');
   if (!(await page.locator(".case-discoveries").innerText()).includes("旁证")) throw new Error("2001 supplemental finding was not separated from core evidence");
@@ -133,8 +142,13 @@ async function loadSave(page, partial) {
   await combine(page, ["S01", "ticket_xu", "xu_deleted"]);
   xuState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!xuState.hypotheses.includes("S03")) throw new Error("S01 + Xu ticket + deleted index did not form the tenth passenger record conclusion");
-  const directionText = await page.locator(".investigation-directions").innerText();
-  if (!["暴雪事故", "地下实验", "第七人", "5B删除记录证明名单曾变化"].every(text => directionText.includes(text))) throw new Error(`Investigation directions did not reflect the current evidence: ${directionText}`);
+  await click(page, '[data-section="cases"]');
+  await click(page, '[data-case="04"]');
+  if (!(await page.locator(".case-discoveries").innerText()).includes("调查注") || !(await page.locator(".case-discoveries").innerText()).includes("第10份乘车记录")) throw new Error("S03 did not write the player's conclusion back into the 2004 case file");
+  await click(page, ".modal-close");
+  await click(page, '[data-section="evidence"]');
+  directionText = await page.locator(".investigation-directions").innerText();
+  if (!["暴雪事故", "第七人", "5B删除记录证明名单曾变化"].every(text => directionText.includes(text)) || directionText.includes("地下实验")) throw new Error(`Investigation directions did not reflect only player-discovered explanations: ${directionText}`);
 
   await openDoc(page, "weather", ["weather_record"]);
   await combine(page, ["snow_depth", "weather_record"]);
@@ -153,8 +167,11 @@ async function loadSave(page, partial) {
   let ameChainState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (ameChainState.unlockedDocs.includes("ame")) throw new Error("Direct AME-7 search bypassed the two-step discovery chain");
   if (!(await page.locator(".search-result").first().innerText()).includes("尚未建立完整项目编号")) throw new Error("Premature AME-7 search did not explain the missing project number");
-  await search(page, "北山 地下设施");
+  await search(page, "北山 维修井");
   await openDoc(page, "facility", ["facility", "ame_partial"]);
+  await click(page, '[data-section="evidence"]');
+  directionText = await page.locator(".investigation-directions").innerText();
+  if (!directionText.includes("地下实验") || !directionText.includes("有支持")) throw new Error(`Facility discovery did not reveal the underground-experiment direction: ${directionText}`);
   ameChainState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!ameChainState.clues.includes("ame_partial") || !ameChainState.clues.includes("experiment_seven")) throw new Error("AME-7 source fragments were not independently discoverable");
   await combine(page, ["ame_partial", "experiment_seven"]);
@@ -197,7 +214,7 @@ async function loadSave(page, partial) {
   if (!(await page.locator('[data-case="05"]').innerText()).includes("失联人员：3")) throw new Error("Main flow did not preserve CASE05 stage 2 before the final threshold");
   await click(page, "[data-confirm-final]");
   const finalReview = await page.locator("#modal-content").innerText();
-  if (!["最终提交前确认", "已确认事实", "仍未确认", "核心证据 10 / 10", "郭文的真实来源"].every(text => finalReview.includes(text))) throw new Error(`Point-of-no-return evidence review is incomplete: ${finalReview}`);
+  if (!["最终提交前确认", "已确认问题", "仍可调查", "现场照片时间是否可信", "韩敬山是否提前知道现场结果", "异常是否早于AME-7", "无法证实", "核心证据 10 / 10", "异常档案 3", "郭文是谁？"].every(text => finalReview.includes(text)) || finalReview.includes("异常档案 3 / 3")) throw new Error(`Point-of-no-return evidence review is incomplete or leaks the anomaly-file total: ${finalReview}`);
   if (!await page.locator("[data-start-final]").count()) throw new Error("Final threshold did not require a second confirmation");
   let preFinalState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (preFinalState.finalStarted) throw new Error("Opening final confirmation already froze the investigation");
@@ -224,15 +241,15 @@ async function loadSave(page, partial) {
   const ending = await page.locator(".ending h2").textContent();
   if (!ending.includes("雪线以下")) throw new Error(`Expected true ending, got ${ending}`);
   if (await page.locator(".ending-tail").count() !== 3) throw new Error("Expected one ending tail for each final action");
-  if (await page.locator(".ending-basis .basis-row.confirmed").count() !== 4) throw new Error("True ending did not explain all four confirmed investigation directions");
+  if (await page.locator(".ending-basis .basis-row.confirmed").count() !== 6) throw new Error("True ending did not explain all six confirmed investigation directions");
   if ((await page.locator(".investigation-rating .rating-grade strong").innerText()).trim() !== "S") throw new Error("Complete investigation did not receive an S rating");
   const ratingText = await page.locator(".investigation-rating").innerText();
-  if (!["核心证据", "10 / 10", "异常档案", "3 / 3", "第五号座位", "已闭合", "保护证人"].every(text => ratingText.includes(text))) throw new Error(`Complete investigation rating breakdown is incomplete: ${ratingText}`);
+  if (!["完整证据链", "核心证据", "10 / 10", "异常档案", "3 / 3", "第五号座位", "已闭合", "保护证人"].every(text => ratingText.includes(text))) throw new Error(`Complete investigation rating breakdown is incomplete: ${ratingText}`);
   if (!(await page.locator("#investigator-label").textContent()).includes("郭文")) throw new Error("True ending did not replace the investigator name");
   if (!(await page.locator("#hidden-count").textContent()).includes("3 / 3")) throw new Error("Post-ending archive completion was not revealed");
   if ((await page.locator("[data-review]").innerText()).trim() !== "查看已收集档案") throw new Error("Ending archive action is still described as returning to the investigation");
   const completedMeta = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-meta")));
-  if (!completedMeta.unlockedDispositions.includes("witness")) throw new Error("Final disposition was not preserved in the cross-playthrough archive");
+  if (!completedMeta.unlockedDispositions.includes("witness") || !["1976", "han"].every(id => completedMeta.viewedFinalFiles.includes(id))) throw new Error("Final disposition or viewed final files were not preserved in the cross-playthrough archive");
   let resetPrompt = "";
   page.once("dialog", async dialog => { resetPrompt = dialog.message(); await dialog.dismiss(); });
   await click(page, "[data-reset]");
@@ -291,6 +308,11 @@ async function loadSave(page, partial) {
     if (!(await logic.locator(".action-result").innerText()).includes(checkpoint.warning)) throw new Error(`CASE05 stage warning missing: ${checkpoint.warning}`);
     await click(logic, "[data-close-modal]");
   }
+  await loadSave(logic, { section: "cases", unlockedCases: ["04", "05"], case05Stage: 2, evidence: ["EV08", "EV16", "EV18"], hidden: ["H01"] });
+  await click(logic, "[data-confirm-final]");
+  const incompleteReview = await logic.locator("#modal-content").innerText();
+  if (!incompleteReview.includes("现场照片时间是否可信") || !incompleteReview.includes("韩敬山是否提前知道现场结果")) throw new Error(`Final review hid missing EV13/EV15 directions: ${incompleteReview}`);
+  await click(logic, "[data-close-modal]");
   await loadSave(logic, { section: "people", unlockedCases: ["04", "05"], unlockedSystems: ["final"], case05Stage: 3, finalStarted: true, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"] });
   if (!(await logic.locator('[data-person="linchuan"] .status').innerText()).includes("待确认")) throw new Error("Final phase did not mark Linchuan as pending");
   await click(logic, '[data-person="linxue"]');
@@ -376,12 +398,12 @@ async function loadSave(page, partial) {
   const metaPage = await metaContext.newPage();
   metaPage.setDefaultNavigationTimeout(navigationTimeout);
   await metaPage.goto(url, { waitUntil: "domcontentloaded" });
-  await metaPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"], unlockedDispositions: ["seal"] })));
+  await metaPage.evaluate(() => localStorage.setItem("snowline-below-meta", JSON.stringify({ completedOnce: true, unlockedEndings: ["truth_full"], unlockedDispositions: ["seal"], viewedFinalFiles: ["1976", "facility"] })));
   await metaPage.reload({ waitUntil: "domcontentloaded" });
   if ((await metaPage.locator("#ending-archive").innerText()).trim() !== "调查记录 1 / 4") throw new Error("Title screen did not expose ending archive progress");
   await click(metaPage, "#ending-archive");
   const archiveText = await metaPage.locator("#modal-content").innerText();
-  if (!archiveText.includes("雪线以下") || (archiveText.match(/\?\?\?/g) || []).length !== 3 || !archiveText.includes("☑\n封存")) throw new Error(`Ending archive slots or disposition records are incorrect: ${archiveText}`);
+  if (!archiveText.includes("雪线以下") || (archiveText.match(/\?\?\?/g) || []).length !== 6 || !archiveText.includes("☑\n封存") || !archiveText.includes("最终资料 · 2 / 5") || !archiveText.includes("历史断点") || !archiveText.includes("实验来源")) throw new Error(`Ending archive slots, disposition records, or final-file collection are incorrect: ${archiveText}`);
   await click(metaPage, ".modal-close");
   await click(metaPage, "#new-game");
   await click(metaPage, ".modal-close");
