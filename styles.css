@@ -70,6 +70,8 @@ button { color: inherit; }
 .brand-mark { font: 500 22px/1 "Noto Serif SC", SimSun, serif; letter-spacing: .18em; }
 .brand-sub { color: var(--muted); font-size: 11px; letter-spacing: .12em; }
 .investigator { display: flex; align-items: center; gap: 9px; color: var(--muted); font: 12px ui-monospace, monospace; }
+.investigator.case05-alert { animation: investigator-glitch 1.6s steps(2, end); }
+@keyframes investigator-glitch { 20%, 60% { color: #d46b6b; transform: translateX(2px); } 40%, 80% { opacity: .35; transform: translateX(-2px); } }
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #68a29a; box-shadow: 0 0 10px #68a29a; }
 .mobile-menu { display: none; border: 0; background: none; font-size: 22px; }
 
@@ -181,6 +183,9 @@ button { color: inherit; }
 .silhouettes i.red { height: 57%; background: #2a2d2d; border-top: 5px solid #832b2b; }
 .silhouettes i.ghost { opacity: .28; transform: translateX(-16px); }
 .hotspot { position: absolute; width: clamp(50px, 7vw, 95px); height: clamp(50px, 7vw, 95px); border: 0; border-radius: 50%; background: transparent; cursor: crosshair; opacity: 0; }
+.hotspot.area-person { width: clamp(82px, 10vw, 132px); height: clamp(112px, 15vw, 184px); border-radius: 44%; }
+.hotspot.area-wide { width: clamp(130px, 20vw, 260px); height: clamp(90px, 13vw, 160px); border-radius: 35%; }
+.hotspot.area-object { width: clamp(86px, 11vw, 145px); height: clamp(76px, 10vw, 130px); border-radius: 35%; }
 .hotspot::after { display: none; }
 .hotspot:focus-visible { opacity: 1; outline: 2px solid var(--ice); outline-offset: 3px; }
 .detailed-hints .hotspot { opacity: 1; border: 1px dashed rgba(202,220,222,.35); background: rgba(202,220,222,.04); }
@@ -286,9 +291,16 @@ button { color: inherit; }
 .known-terms p { color: var(--muted); font-size: 10px; }
 .known-terms button { margin: 0 6px 6px 0; padding: 7px 9px; color: var(--ice); border: 1px solid #536367; background: transparent; cursor: pointer; }
 .known-terms button.active { border-color: var(--red-light); background: rgba(167,43,43,.16); color: white; }
+.term-bank { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.term-bank button { margin: 0; }
 .term-group { display: inline-flex; align-items: center; gap: 3px; margin-right: 10px; }
 .term-group span { color: var(--faint); font-size: 10px; }
 .search-draft { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding: 8px 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+.recent-conclusions { margin: 0 0 18px; padding: 14px; border: 1px solid #344246; background: rgba(10,16,18,.62); }
+.recent-conclusions h3 { margin: 0 0 10px; font: 400 14px "Noto Serif SC", serif; }
+.recent-conclusions article { display: grid; grid-template-columns: 72px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid rgba(70,84,88,.36); }
+.recent-conclusions b { color: var(--ice); font: 10px ui-monospace, monospace; }
+.recent-conclusions p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
 .todo-list { display: grid; gap: 8px; }
 .todo { padding: 14px 16px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 12px; }
 .todo.done { color: #657174; text-decoration: line-through; }
@@ -334,6 +346,9 @@ button { color: inherit; }
 .mobile-photo-expanded { width: 100%; }
 .mobile-photo-expanded .photo-frame { width: 100%; min-height: 0; aspect-ratio: 16/10; background-color: #020405; background-size: contain; background-repeat: no-repeat; background-position: center; }
 .mobile-photo-expanded .hotspot { width: 56px; height: 56px; }
+.mobile-photo-expanded .hotspot.area-person { width: 94px; height: 142px; }
+.mobile-photo-expanded .hotspot.area-wide { width: 190px; height: 116px; }
+.mobile-photo-expanded .hotspot.area-object { width: 104px; height: 92px; }
 .mobile-photo-expanded .hotspot.found { width: 34px; height: 34px; }
 .ending-basis { margin: 28px 0 8px; padding: 20px; border: 1px solid var(--line); background: rgba(6,11,13,.7); }
 .ending-basis h3, .disposition-archive h3, .final-file-archive h3 { margin: 0 0 8px; font: 400 16px "Noto Serif SC", serif; }
@@ -433,4 +448,9 @@ button { color: inherit; }
   .document { padding: 24px 18px; }
   .modal { padding: 8px; }
   .modal-inner { padding: 28px 20px; }
+}
+
+@media (pointer: coarse) {
+  .document-body .evidence-hit { display: inline-block; min-height: 36px; margin: -7px -5px; padding: 7px 5px; line-height: 22px; touch-action: manipulation; }
+  .document-body tr .evidence-hit { min-width: 44px; }
 }

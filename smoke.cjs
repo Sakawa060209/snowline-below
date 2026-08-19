@@ -35,11 +35,11 @@ async function search(page, query) {
 async function inspectPerson(page, id, clue) {
   await click(page, '[data-section="people"]');
   await click(page, `[data-person="${id}"]`);
-  if (!await page.locator(`[data-clue="${clue}"]`).count()) {
+  const registered = await page.evaluate(expected => JSON.parse(localStorage.getItem("snowline-below-save-v2")).clues.includes(expected), clue);
+  if (!registered) {
     const modal = await page.locator("#modal-content").innerText().catch(() => "<no modal>");
-    throw new Error(`Missing ${clue} for ${id}: ${modal}`);
+    throw new Error(`Opening ${id} did not register ${clue}: ${modal}`);
   }
-  await click(page, `[data-clue="${clue}"]`);
   await click(page, ".modal-close");
 }
 
@@ -74,6 +74,7 @@ async function loadSave(page, partial) {
   if (!directionText.includes("暴雪事故") || directionText.includes("地下实验") || directionText.includes("第七人")) throw new Error(`Opening investigation directions leaked future explanations: ${directionText}`);
 
   await openDoc(page, "passengers", ["passenger_count", "seat_gap"]);
+  if (!await page.locator(".current-line.compact").count()) throw new Error("An ordinary new investigation gap expanded like a chapter transition");
   await inspectPerson(page, "guowen", "guowen_identity");
   await combine(page, ["passenger_count", "seat_gap"]);
   for (const [id, clue] of [
@@ -151,7 +152,7 @@ async function loadSave(page, partial) {
   await openDoc(page, "supplies", ["four_supplies"]);
   await click(page, '[data-section="evidence"]');
   const currentMaterials = await page.locator(".current-clue-group").innerText();
-  if (!currentMaterials.includes("第五只杯子") || !currentMaterials.includes("四人份物资") || !currentMaterials.includes("分组不代表")) throw new Error(`Evidence board did not separate current discovered materials: ${currentMaterials}`);
+  if (!["2001营地", "第五只杯子", "五处睡眠压痕", "四人份物资", "系统不会标出正确组合"].every(text => currentMaterials.includes(text))) throw new Error(`Evidence board did not present a broad case-topic group: ${currentMaterials}`);
   await click(page, '.current-clue-group [data-go-target="doc:camp"]');
   await page.locator('[data-nav-target="doc:camp"].current-target').waitFor();
   if (await page.locator("#modal:not([hidden])").count()) throw new Error("Returning to a clue source auto-opened the archive document");
@@ -185,7 +186,7 @@ async function loadSave(page, partial) {
   await click(page, ".modal-close");
   await click(page, '[data-section="web"]');
   if (!(await page.locator("#search-input").getAttribute("placeholder")).includes("关键词或组合词")) throw new Error("Old web search instructions still require two or more keywords");
-  await search(page, "许 白岭 2004");
+  await search(page, "许 BL-17");
   if (!(await page.locator(".search-result").first().innerText()).includes("2004-12-18")) throw new Error("The erased Xu passenger cache was not recovered");
   let xuState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!xuState.clues.includes("ticket_xu") || !xuState.clues.includes("xu_deleted")) throw new Error("Xu ticket and deleted index did not become independently usable clues");
@@ -216,6 +217,9 @@ async function loadSave(page, partial) {
   await click(page, '[data-section="notes"]');
   const notesText = await page.locator("#content").innerText();
   if (!notesText.includes("导航提示 · 不揭示答案") || !notesText.includes("调查目标") || !notesText.includes("北山") || !notesText.includes("维修井") || notesText.includes("北山 地下设施")) throw new Error(`Investigation notes did not keep facility search terms separate: ${notesText}`);
+  if (await page.locator(".term-group").count()) throw new Error("Search word bank still grouped the intended answer terms");
+  const recentBeforeReload = await page.locator(".recent-conclusions").innerText();
+  if (!recentBeforeReload.includes("最近阶段结论") || !recentBeforeReload.includes("19:47")) throw new Error(`Recent conclusions were not retained as investigation context: ${recentBeforeReload}`);
   const searchCountBeforeFill = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).searches.length);
   await click(page, '[data-search-token="北山"]');
   await click(page, '[data-search-token="维修井"]');
@@ -224,6 +228,10 @@ async function loadSave(page, partial) {
   if (await page.locator("#search-input").inputValue() !== "北山 维修井") throw new Error("Combined known terms did not populate the search field");
   const searchCountAfterFill = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).searches.length);
   if (searchCountAfterFill !== searchCountBeforeFill) throw new Error("Known search term executed a search instead of only filling the field");
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await click(page, "#continue-game");
+  await click(page, '[data-section="notes"]');
+  if (!(await page.locator(".recent-conclusions").innerText()).includes("19:47")) throw new Error("Recent stage conclusions disappeared after reload");
 
   await search(page, "AME-7");
   let ameChainState = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
@@ -339,9 +347,16 @@ async function loadSave(page, partial) {
   logic.setDefaultTimeout(5000);
   logic.setDefaultNavigationTimeout(navigationTimeout);
   await logic.goto(url, { waitUntil: "domcontentloaded" });
+  await loadSave(logic, { section: "web", hidden: ["H03"] });
+  for (const query of ["许 BL-17", "许 5B", "许 2004", "BL-17 5B"]) {
+    await search(logic, query);
+    if (!(await logic.locator(".search-result").first().innerText()).includes("2004-12-18")) throw new Error(`Reasonable Xu search variant was rejected: ${query}`);
+  }
   await loadSave(logic, {
     section: "evidence",
-    unlockedCases: ["04", "05"],
+    unlockedCases: ["04", "00", "01", "03", "05"],
+    unlockedSystems: ["photos", "evidence", "timeline", "web"],
+    attention: [],
     case05Stage: 0,
     evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"],
     clues: ["case_times", "repeated_time", "ame_report", "extra_member", "facility"]
@@ -351,12 +366,24 @@ async function loadSave(page, partial) {
   await click(logic, "[data-combine]");
   let stagedCase = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (stagedCase.case05Stage !== 1) throw new Error(`CASE05 skipped stage 1 after EV16: ${stagedCase.case05Stage}`);
+  if (!stagedCase.attention.includes("cases:05")) throw new Error("CASE05 stage 1 did not emit an answer-neutral index update");
+  if (!await logic.locator(".investigator.case05-alert").count()) throw new Error("CASE05 update did not mark the case header");
+  const stageOneLine = await logic.locator(".current-line").innerText();
+  if (!stageOneLine.includes("索引发生变化") || stageOneLine.includes("失联人员")) throw new Error(`CASE05 update notification leaked its answer: ${stageOneLine}`);
+  await click(logic, '[data-section="cases"]');
+  if (!(await logic.locator("[data-case='05']").innerText()).includes("UPDATE")) throw new Error("CASE05 stage 1 card was not marked UPDATE");
+  await click(logic, '[data-case="05"]');
+  await click(logic, "[data-close-modal]");
+  await click(logic, '[data-section="evidence"]');
   await click(logic, '[data-select-clue="ame_report"]');
   await click(logic, '[data-select-clue="extra_member"]');
   await click(logic, '[data-select-clue="facility"]');
   await click(logic, "[data-combine]");
   stagedCase = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (stagedCase.case05Stage !== 2) throw new Error(`CASE05 did not advance to stage 2 on a later event: ${stagedCase.case05Stage}`);
+  if (!stagedCase.attention.includes("cases:05")) throw new Error("CASE05 stage 2 did not mark its renewed update");
+  await click(logic, '[data-section="cases"]');
+  if (!(await logic.locator("[data-case='05']").innerText()).includes("UPDATE")) throw new Error("CASE05 stage 2 card was not marked UPDATE");
 
   for (const checkpoint of [
     { stage: 0, evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08"], text: "系统正在建立档案", warning: "名单中间发生了什么" },
@@ -490,7 +517,7 @@ async function loadSave(page, partial) {
   await clearContext.close();
 
   await page.screenshot({ path: path.join(root, "smoke-desktop.png"), fullPage: true });
-  const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const mobile = await mobileContext.newPage();
   mobile.setDefaultTimeout(5000);
   mobile.setDefaultNavigationTimeout(navigationTimeout);
@@ -500,12 +527,15 @@ async function loadSave(page, partial) {
   await click(mobile, "#mobile-menu");
   await click(mobile, '[data-section="people"]');
   await click(mobile, '[data-person="linxue"]');
-  await click(mobile, '[data-clue="link_linxue"]');
+  if (!(await mobile.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).clues.includes("link_linxue")))) throw new Error("Mobile profile opening did not auto-register an explicit relationship");
   await click(mobile, ".modal-close");
   await click(mobile, "#mobile-menu");
   await click(mobile, '[data-section="archive"]');
   await click(mobile, '[data-doc="passengers"]');
-  await click(mobile, '[data-clue="passenger_count"]');
+  const passengerLine = mobile.locator(".document-body p").filter({ hasText: "本次登记乘客" });
+  const passengerBox = await passengerLine.boundingBox();
+  await mobile.touchscreen.tap(passengerBox.x + 8, passengerBox.y + passengerBox.height / 2);
+  if (!(await mobile.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).clues.includes("passenger_count")))) throw new Error("Touching the evidence line outside its small label did not register the document clue");
   await click(mobile, ".modal-close");
   await click(mobile, "#mobile-menu");
   await click(mobile, '[data-section="photos"]');
@@ -513,6 +543,10 @@ async function loadSave(page, partial) {
   if (!await mobile.locator(".mobile-photo-expanded").count()) throw new Error("Mobile photo did not open fullscreen inspection");
   const mobileBackgroundSize = await mobile.locator(".mobile-photo-expanded .photo-frame").evaluate(el => getComputedStyle(el).backgroundSize);
   if (mobileBackgroundSize !== "contain") throw new Error(`Mobile evidence photo inspection should preserve the full image with contain, got ${mobileBackgroundSize}`);
+  const mobileFrameBox = await mobile.locator(".mobile-photo-expanded .photo-frame").boundingBox();
+  const mobileHotspotBox = await mobile.locator('.mobile-photo-expanded [data-clue="footprints"]').boundingBox();
+  await mobile.touchscreen.tap(Math.max(mobileFrameBox.x + 2, mobileHotspotBox.x - 18), mobileHotspotBox.y + mobileHotspotBox.height / 2);
+  if (!(await mobile.locator(".toast").last().innerText()).includes("值得继续检查")) throw new Error("A near-miss touch beside a photo target received no forgiving inspection feedback");
   await click(mobile, '.mobile-photo-expanded [data-clue="footprints"]');
   await click(mobile, '[data-close-modal]');
   await click(mobile, "#mobile-menu");
