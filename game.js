@@ -143,6 +143,10 @@
     hintLevel: 0,
     updates: 0,
     attention: [],
+    archiveFilter: "all",
+    seenLines: [],
+    expandedLine: null,
+    searchDraft: [],
     case05Stage: 0,
     finalStarted: false,
     finalChoices: [],
@@ -262,12 +266,12 @@
     return state.attention.filter(item => item.startsWith(`${section}:`)).length;
   }
 
-  function toast(title, text, kind = "") {
+  function toast(title, text, kind = "", duration = 4500) {
     const node = document.createElement("div");
     node.className = `toast ${kind}`;
     node.innerHTML = `<b>${title}</b><span>${text}</span>`;
     $("#toast-region").append(node);
-    setTimeout(() => node.remove(), 4500);
+    setTimeout(() => node.remove(), duration);
   }
 
   function discoverClue(id, silent = false) {
@@ -317,7 +321,16 @@
     if (!addUnique(state.unlockedCases, id)) return;
     state.updates += 1;
     markAttention("cases", id);
-    toast("档案解锁 · 为什么现在出现", `${message}。上一条人数矛盾已经成立；下一步去案件页查看新案摘要。`, "evidence");
+    archiveData.filter(doc => doc.case === id).forEach(doc => markAttention("archive", doc.id));
+    const photoByCase = { "00": "class", "01": "camp", "03": "film" };
+    if (photoByCase[id]) markAttention("photos", photoByCase[id]);
+    const transitions = {
+      "00": "九名乘客并非偶然同行，且现场人数无法互相对应。新的问题是：这批乘客与哪起旧案有关？",
+      "01": "学校请假、学号与体检记录彼此印证，官方六人记录存在无法解释的缺口。新的问题是：谁继续追查了这次失踪？",
+      "03": "2001营地的生活痕迹与装备登记无法对应。新的问题是：后来留下的影像是否重复了同一种矛盾？",
+      "05": "跨案材料已经开始反向记录当前调查。下一步由你决定何时进入最后阶段。"
+    };
+    toast("阶段结论 · 新档案恢复", `${transitions[id] || message} 请先阅读${message}摘要。`, "evidence", 8000);
   }
 
   function unlockSystem(id, message) {
@@ -431,42 +444,80 @@
   };
 
   function currentInvestigation() {
-    const line = (question, known, reasoning, section, label, summary) => ({ question, known, reasoning, section, label, summary });
-    if (state.finalStarted) return line("在19:47前，你要把哪两份最终资料带走？", "普通调查已经冻结，现有结论不会再改变。", "选择最能补足当前判断缺口的两项调查。", "final", "返回最终调查", "本章：用有限行动决定你最终能确认到哪一层真相。");
-    if (!hasEvidence("EV01") || !hasEvidence("EV10")) {
-      if (!hasClue("passenger_count")) return line("车上究竟登记了多少人？", "现场只留下八组离车脚印。", "先确认名单人数，再判断人数与脚印是否矛盾。", "archive", "查看乘客名单", "第一章：从人数而不是暴雪开始复核现场。");
-      if (!hasClue("passenger_links")) return line("这九名乘客为什么会同车前往白岭？", "名单确认九人，其中多人似乎与旧案有关。", "核对人物经历；确认至少五条旧案关系即可。", "people", "核对乘客身份", "第一章：证明这不是一次随机同行。");
-      if (!hasClue("footprints")) return line("九名乘客离开巴士后，为何只有八组脚印？", "九人名单与共同关系已经确认。", "脚印不在全景照中；查看独立的足迹勘验照片。", "photos", "查看足迹照片", "第一章：把登记人数与现场痕迹放到同一张证据板上。");
-      return line("九名乘客与八组脚印能否形成直接矛盾？", "人数、关系和足迹都已记录。", "在证据板分别组合关系＋人数、人数＋脚印。", "evidence", "前往证据板", "第一章：建立两条基础结论，打开旧案链。");
+    const line = (id, question, known, reasoning, section, label, summary, target = "") => ({ id, question, known, reasoning, section, label, summary, target });
+    const pendingCase = state.attention.find(item => item.startsWith("cases:"));
+    if (pendingCase) {
+      const caseId = pendingCase.split(":")[1];
+      const c = caseData.find(item => item.id === caseId);
+      return line(`case-${caseId}`, `新档案恢复：${c.title}`, "上一阶段已经形成足以重开旧案的结论。", "先阅读案件摘要，确认它与当前调查的关系；摘要不会替你标出异常。", "cases", `查看${c.index.split(" / ")[0]}`, "阅读后，调查线才会指向本案新恢复的原始资料。", `case:${caseId}`);
     }
-    if (!hasEvidence("EV02")) return line("2000年失踪的真是官方所说的六名学生吗？", "2004年的乘客与2000旧案存在直接联系。", "对照请假人数、连续学号和体检表，寻找缺失的第七人。", "archive", "调查2000档案", "第二章：学校系统里有一个被官方口径漏掉的人。");
-    if (!hasEvidence("EV04")) return line("2001营地里实际生活过几个人？", "官方登记四人，但营地存在额外生活痕迹。", "将第五只杯子与四人份装备交叉验证。", hasClue("five_cups") && hasClue("four_supplies") ? "evidence" : "archive", hasClue("five_cups") && hasClue("four_supplies") ? "建立人数结论" : "调查2001档案", "第三章：生活痕迹和装备清单说出了两种人数。");
-    if (!hasEvidence("EV07") || !hasEvidence("EV08")) return line("2003底片边缘的第七个人是谁？", "合同确认摄制组只有六人。", "分别放大2000合照和2003底片，再主动对比红围巾少年。", "photos", "放大并对比照片", "第四章：先确认名单人数，再确认影像中的名单外人物。");
-    if (!hasEvidence("EV13") || !hasEvidence("EV15")) {
-      const ready = hasClue("snow_depth") && hasClue("weather_record") && hasClue("forecast_eight") && hasClue("footprints");
-      return line("2004现场照片的时间和勘验结果可信么？", "跨案少年已确认；现在需要重新检查最初的2004现场。", "先以雪深对照逐时气象，再核对韩敬山为何提前写下“脚印8”。", ready ? "evidence" : "archive", ready ? "核对现场结论" : "复查2004资料", "第五章：影像给出人物，书面记录将给出时间与人为痕迹。");
+    if (state.finalStarted) return line("final", "在19:47前，你要把哪两份最终资料带走？", "普通调查已经冻结，现有结论不会再改变。", "选择最能补足当前判断缺口的两项调查。", "final", "返回最终调查", "用有限行动决定最终能够确认到哪一层真相。", "final:index");
+    if (!hasEvidence("EV01") || !hasEvidence("EV10")) {
+      if (!hasClue("passenger_count")) return line("04-count", "巴士的登记人数与座位使用情况是否一致？", "现场材料对乘客人数留下了互相独立的记录。", "先核对原始名单，不预设现场人数结论。", "archive", "定位乘客名单", "第一章：从登记记录复核2004现场。", "doc:passengers");
+      if (!hasClue("passenger_links")) {
+        const relationPeople = [["link_linxue","linxue"],["link_zhou","zhou"],["link_luo","luo"],["link_han","han"],["link_lu","lu"],["link_tang","tang"],["link_gu","gu"],["link_qiu","qiu"]];
+        const nextPerson = relationPeople.find(([clue]) => !hasClue(clue))?.[1] || "linxue";
+        return line("04-links", "这些乘客为什么会同时前往白岭？", "乘客名单已经确认，但同行原因仍未建立。", "核对人物档案中的旧案经历；足够多的独立关系才能排除偶然同行。", "people", "定位下一名乘客", "第一章：建立乘客与旧案之间的可验证关系。", `person:${nextPerson}`);
+      }
+      if (!hasClue("footprints")) return line("04-tracks", "登记人数与离车痕迹能否互相对应？", "名单人数与同行关系已经确认。", "查看独立的足迹勘验照片；异常仍需由你在图中发现。", "photos", "定位足迹勘验照", "第一章：把书面人数与现场痕迹放在一起核对。", "photo:tracks");
+      return line("04-deduce", "现有材料能否形成两条独立的人数结论？", "登记、关系与足迹观察均已记录。", "在证据板检验这些材料之间是否存在直接关系。", "evidence", "前往相关线索", "第一章：结论成立后，旧案索引才会恢复。", "clue:passenger_count");
+    }
+    if (!hasEvidence("EV02")) {
+      if (!hasClue("leave_count")) return line("00-leave", "学校的集体外出记录与官方人数是否一致？", "2000旧案已恢复，但官方摘要只有结案口径。", "先查同日形成的校内请假记录。", "archive", "定位请假登记", "第二章：从学校原始记录重新核对人数。", "doc:leave");
+      if (!hasClue("missing17")) return line("00-roster", "连续的学生编号中是否存在档案缺口？", "请假人数已经记录，无需重复检查。", "检查学生编号索引是否保持连续。", "archive", "定位学生编号索引", "当前缺口：编号记录能否解释人数差异。", "doc:roster");
+      if (!hasClue("health_guowen")) return line("00-identity", "缺失编号是否留下过独立身份记录？", "请假人数与编号缺口已经记录。", "寻找由另一套校务流程形成的身份材料。", "archive", "定位体检残页", "当前缺口：为缺失编号寻找独立来源。", "doc:physical");
+      return line("00-deduce", "三份学校记录能否共同推翻官方人数口径？", "请假、编号与身份材料都已记录。", "在证据板检验三份独立记录是否指向同一矛盾。", "evidence", "核对本案材料", "第二章：只使用玩家已经发现的三份学校材料。", "clue:leave_count");
+    }
+    if (!hasEvidence("EV04")) {
+      if (!hasClue("five_cups")) return line("01-camp", "2001营地的使用痕迹与人员登记是否一致？", "案件摘要只确认四名调查者。", "检查营地勘验中的实际使用痕迹。", "archive", "定位营地勘验", "第三章：生活痕迹和人员名单需要独立核对。", "doc:camp");
+      if (!hasClue("four_supplies")) return line("01-supplies", "营地痕迹能否由物资登记独立验证？", "营地中的使用痕迹已经记录。", "查看出发前形成的装备领用记录。", "archive", "定位物资领用表", "当前缺口：另一来源记录的队伍规模。", "doc:supplies");
+      return line("01-deduce", "生活痕迹与装备登记是否描述了同一支队伍？", "两份来源不同的人数材料已经记录。", "在证据板检验它们是否构成直接矛盾。", "evidence", "核对本案材料", "第三章：结论仍需由你主动建立。", "clue:five_cups");
+    }
+    if (!hasEvidence("EV07") || !hasEvidence("EV08")) {
+      if (!hasClue("team_six")) return line("03-roster", "2003摄制组的成员记录与影像是否一致？", "案件摘要没有证明现场影像中的人数。", "先用合同确认团队登记规模。", "archive", "定位摄制合同", "第四章：先建立影像比较所需的基准。", "doc:crew");
+      if (!hasClue("photo_seventh")) return line("03-film", "摄制合同与C-12底片能否互相对应？", "合同中的团队人数已经记录。", "放大检查底片构图与边缘；系统不会替你标出异常。", "photos", "定位底片 C-12", "第四章：影像中的差异必须由玩家观察。", "photo:film");
+      if (!hasEvidence("EV07")) return line("03-deduce", "成员记录与底片观察是否存在人数矛盾？", "合同人数和底片观察均已记录。", "在证据板检验两份材料之间的关系。", "evidence", "核对本案材料", "第四章：先证明影像与名单不一致。", "clue:team_six");
+      if (!hasClue("class_red_scarf")) return line("03-class", "早期合照中是否出现过相似的影像特征？", "2003底片已经留下名单外观察。", "重新检查2000班级合照，不预设人物身份。", "photos", "定位2000班级合照", "第四章：跨照片比较需要两边都有可见观察。", "photo:class");
+      if (!hasClue("guowen_red_scarf")) return line("03-compare", "两张照片中的人物特征是否足以支持同一性？", "两张照片都已由你记录相关观察。", "使用照片页的主动对比，结论不会自动生成。", "photos", "定位照片对比", "第四章：只有完成比较，才能形成跨案人物结论。", "compare:2000-2003");
+      return line("03-identity", "跨案影像比较能否形成稳定结论？", "影像观察与主动对比都已完成。", "在证据板记录人物一致性结论。", "evidence", "核对影像材料", "第四章：不再重复已经完成的名单核对。", "clue:photo_seventh");
+    }
+    if (!hasEvidence("EV13")) {
+      if (!hasClue("snow_depth")) return line("04-snow", "现场照片的归档时间能否由客观环境验证？", "跨案影像比较已完成，现在回到2004现场。", "先查独立于照片系统的现场测量记录。", "archive", "定位雪深附表", "第五章：用现场物理记录检验时间标注。", "doc:snowSurvey");
+      if (!hasClue("weather_record")) return line("04-weather", "现场测量对应哪一个时间段？", "现场雪深已经记录，无需重复检查。", "用逐时气象记录寻找同样的积雪深度。", "archive", "定位逐时气象记录", "当前缺口：给现场测量找到独立时间参照。", "doc:weather");
+      return line("04-time-deduce", "雪深与逐时记录能否检验照片标注？", "现场测量与气象记录均已取得。", "在证据板检验两份独立记录是否对应。", "evidence", "核对时间材料", "第五章：结论必须来自测量值，而非系统提示。", "clue:snow_depth");
+    }
+    if (!hasEvidence("EV15")) {
+      if (!hasClue("forecast_eight")) return line("04-prior", "有没有人在正式勘验前就掌握了现场信息？", "照片时间问题已经建立，但人为介入仍需独立证据。", "检查早于现场发现形成的私人记录。", "archive", "定位韩敬山便笺", "当前缺口：记录形成时间与现场信息的先后关系。", "doc:memo");
+      return line("04-prior-deduce", "提前形成的记录能否与现场观察对应？", "私人便笺与足迹观察都已由你记录。", "在证据板检验两者是否描述同一现场信息。", "evidence", "核对提前记录", "第五章：系统不直接复述便笺中的数字。", "clue:forecast_eight");
     }
     if (!hasEvidence("EV16")) {
-      const fourTimes = ["time_2000", "time_2001", "time_2003", "time_2004"].every(hasClue);
-      if (!fourTimes) return line("四起案件是否在同一时刻发生异常？", "2004照片时间被改写，韩敬山提前知道现场结果。", "回查四案原始记录中的中断时刻。", "archive", "回查四案时间", "第六章：把零散时刻变成可验证的跨案规律。");
-      if (!hasClue("case_times")) return line("四个19:47是巧合，还是同一规律？", "四案原始材料都已记录19:47。", "在时间线主动进行跨案件比对。", "timeline", "前往时间线", "第六章：确认规律后，再寻找比四案更早的独立记录。");
-      if (!hasEvidence("EV16")) return line("19:47异常是否早于四起失踪案？", "四案共同时间已经建立。", "在旧网页以地点＋时间检索早期记录，再与跨案时间组合。", hasClue("repeated_time") ? "evidence" : "web", hasClue("repeated_time") ? "建立时间结论" : "检索早期记录", "第六章：更早的记录能排除事后整理档案造成的巧合。");
+      const timeDocs = [["time_2000","leave"],["time_2001","camp"],["time_2003","crew"],["time_2004","memo"]];
+      const missingTime = timeDocs.find(([clue]) => !hasClue(clue));
+      if (missingTime) return line(`time-${missingTime[0]}`, "四起案件的原始记录是否出现同一中断时刻？", "已确认的案件时刻会保留，不需要重复检查。", "只回查尚未记录时刻的那一案。", "archive", "定位缺失的时刻记录", "第六章：逐案补齐，而不是重新扫描全部档案。", `doc:${missingTime[1]}`);
+      if (!hasClue("case_times")) return line("time-compare", "四个独立记录是否构成跨案件规律？", "四案时刻均已从原始材料记录。", "在时间线主动进行交叉比对。", "timeline", "定位时间比对", "第六章：比较完成前不把重复当成规律。", "timeline:compare");
+      if (!hasClue("repeated_time")) return line("time-search", "这一时刻是否早于四起失踪案？", "跨案件时间已经建立。", "用地点与时刻检索更早的独立记录。", "web", "前往旧网页检索", "第六章：更早材料可排除事后整理造成的重复。", "web:search");
+      return line("time-deduce", "早期记录能否证明异常并非四案之后才出现？", "跨案时刻与1988记录均已取得。", "在证据板检验它们的时间先后关系。", "evidence", "核对时间规律", "第六章：形成规律后再转向共同地点。", "clue:case_times");
     }
     if (!hasEvidence("EV18")) {
-      if (!hasDoc("facility")) return line("三处案发地点在地下是否彼此相连？", "19:47异常早于四案，单次事故无法解释。", "用“北山”加设施类型检索废弃维护系统。", "web", "检索地下设施", "第七章：从共同时间转向共同地点。");
-      if (!hasClue("ame_partial")) return line("1974维护图后来被谁重新使用？", "维护道连接气象站、公路与2001营地。", "检查图纸底部的1991年手写批注。", "archive", "查看更新的维护图", "第七章：图纸会留下一个残缺项目编号。");
-      if (!hasClue("experiment_seven")) return line("AME-?缺失的最后一位数字在哪里？", "维护图留下了残缺编号AME-?。", "复查韩敬山便笺夹页中被划掉的实验编号。", "archive", "复查韩敬山便笺", "第七章：两份独立资料分别保留编号的两部分。");
-      if (!hasClue("ame_code")) return line("AME-?与“7号实验”是否指向同一项目？", "两份独立资料提供了编号与末位数字。", "在证据板组合两条线索，复原检索词。", "evidence", "复原项目编号", "第七章：复原编号不等于证明实验与案件有关。");
-      if (!hasDoc("ame")) return line("完整编号AME-7能找到什么？", "项目检索词已从两份档案中复原。", "在旧网页手动检索AME-7。", "web", "检索 AME-7", "第七章：报告仍需与地点资料形成独立关联。");
-      return line("AME-7实验是否与连续失踪地点有关？", "维护通道与观察报告均已恢复。", "记录报告中的两项人数异常，再与通道信息组合。", "evidence", "建立地点关联", "第七章：区分“实验存在”与“实验能够解释全部异常”。");
+      if (!hasDoc("facility")) return line("facility-search", "数起事件的地点之间是否存在未公开的结构联系？", "共同时间已经确认，单次事故无法解释全部案件。", "组合档案中已经出现的地点词与设施词进行检索。", "web", "前往旧网页检索", "第七章：系统只提供已知词，不替你组合答案。", "web:search");
+      if (!hasClue("facility")) return line("facility-map", "恢复的维护图是否连接了已知案发地点？", "工程图已经进入资料库。", "检查图纸中的通道去向。", "archive", "定位维护通道图", "第七章：先确认地点关系，再追查图纸后期用途。", "doc:facility");
+      if (!hasClue("ame_partial")) return line("facility-note", "这张旧图后来是否被重新使用？", "通道去向已经记录。", "检查图纸上的后期批注，不预设项目名称。", "archive", "返回维护通道图", "当前缺口：图纸在1974年之后的使用痕迹。", "doc:facility");
+      if (!hasClue("experiment_seven")) return line("ame-fragment", "残缺项目标记能否从另一份资料得到补充？", "维护图留下了不完整的项目编号。", "复查被标记为UPDATE的韩敬山便笺。", "archive", "定位韩敬山便笺", "第七章：两份独立资料各自保留一部分。", "doc:memo");
+      if (!hasClue("ame_code")) return line("ame-recover", "两条残缺记录是否属于同一个项目标记？", "编号片段已经分别记录。", "在证据板检验能否复原可用检索词。", "evidence", "核对编号片段", "第七章：复原编号不等于证明实验与案件有关。", "clue:ame_partial");
+      if (!hasDoc("ame")) return line("ame-search", "复原后的项目编号能找到什么？", "完整项目标记已由玩家推理获得。", "在旧网页手动使用这个编号。", "web", "前往旧网页检索", "第七章：搜索不会自动执行。", "web:search");
+      if (!hasClue("ame_report")) return line("ame-report", "观察报告记录了什么可验证现象？", "AME-7报告已经恢复。", "检查报告正文中的首次观察。", "archive", "定位AME-7报告", "当前缺口：实验现象的原始记录。", "doc:ame");
+      if (!hasClue("extra_member")) return line("ame-retest", "复测记录是否支持首次观察？", "首次观察已经记录。", "继续检查同一报告中的次日复测。", "archive", "返回AME-7报告", "当前缺口：同一实验的后续人数记录。", "doc:ame");
+      return line("ame-deduce", "实验记录与通道地点能否形成直接关联？", "报告中的两项观察与通道去向均已记录。", "在证据板检验三份材料的关系。", "evidence", "核对实验与地点", "第七章：区分实验存在与实验解释一切。", "clue:ame_report");
     }
-    if (!state.hidden.includes("H01")) return line("人数异常是否早于AME-7实验？", "实验与案发地点有关，但仍不能证明它是异常起点。", "检索并放大1976气象站合影，与郭文影像主动对比。", hasDoc("photo1976") ? "photos" : "web", hasDoc("photo1976") ? "检查1976照片" : "检索早期影像", "终章前：寻找能推翻单一实验解释的历史断点。");
-    return line("现有证据已经足够进入最终阶段吗？", "主要矛盾、时间规律、地点关联与1976身份冲突均已确认。", "可继续补查5B等支线，或从案件页进入最后15分钟。", "cases", "查看CASE 05", "调查线完整；郭文是谁仍无法由现有材料证实。");
+    if (!state.hidden.includes("H01")) return line("1976", "已知人数异常是否早于AME-7记录？", "实验与地点有关，但仍不能证明它是异常起点。", "寻找并检查实验之前的影像材料。", hasDoc("photo1976") ? "photos" : "web", hasDoc("photo1976") ? "定位1976合影" : "前往旧网页检索", "终章前：更早影像可能改变因果判断。", hasDoc("photo1976") ? "photo:1976" : "web:search");
+    return line("ready", "现有证据已经足够进入最终阶段吗？", "主要矛盾、时间规律、地点关联与历史冲突均已确认。", "可继续补查支线，或从案件页进入最后15分钟。", "cases", "定位CASE 05", "郭文是谁仍无法由现有材料证实。", "case:05");
   }
 
   function renderInvestigationLine() {
     const item = currentInvestigation();
-    return `<section class="current-line"><div class="current-line-head"><span class="eyebrow">CURRENT INVESTIGATION / 当前调查线</span><span class="line-pulse">● 进行中</span></div><h3>${item.question}</h3><div class="line-facts"><p><b>已知事实</b>${item.known}</p><p><b>建议推理</b>${item.reasoning}</p></div><div class="line-next"><span>${item.summary}</span><button class="btn ghost" data-go-section="${item.section}">${item.label} →</button></div></section>`;
+    const expanded = state.expandedLine === item.id || !state.seenLines.includes(item.id);
+    if (!expanded) return `<section class="current-line compact"><div><span class="eyebrow">当前问题</span><h3>${item.question}</h3></div><div class="compact-actions"><button class="line-toggle" data-toggle-line="${item.id}">展开</button><button class="btn ghost" data-go-section="${item.section}" data-go-target="${item.target}" data-line-id="${item.id}">${item.label} →</button></div></section>`;
+    return `<section class="current-line"><div class="current-line-head"><span class="eyebrow">CURRENT INVESTIGATION / 当前调查线</span><span class="line-pulse">● 进行中</span></div><h3>${item.question}</h3><div class="line-facts"><p><b>已知事实</b>${item.known}</p><p><b>建议推理</b>${item.reasoning}</p></div><div class="line-next"><span>${item.summary}</span><div class="line-actions"><button class="line-toggle" data-toggle-line="${item.id}">收起</button><button class="btn ghost" data-go-section="${item.section}" data-go-target="${item.target}" data-line-id="${item.id}">${item.label} →</button></div></div></section>`;
   }
 
   function switchSection(id) {
@@ -480,6 +531,25 @@
     save();
     render();
     $("#sidebar").classList.remove("open");
+  }
+
+  function navigateTo(section, target = "", lineId = "") {
+    if (lineId) {
+      addUnique(state.seenLines, lineId);
+      state.expandedLine = null;
+    }
+    if (section === "archive" && target) state.archiveFilter = "all";
+    closeModal();
+    switchSection(section);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const node = target ? document.querySelector(`[data-nav-target="${target}"]`) : null;
+      if (!node) return;
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+      node.classList.add("current-target");
+      node.dataset.currentMarker = "CURRENT";
+      if (target === "web:search") node.focus?.();
+      setTimeout(() => { node.classList.remove("current-target"); delete node.dataset.currentMarker; }, 2200);
+    }));
   }
 
   function render() {
@@ -504,7 +574,7 @@
       <div class="card-grid">${caseData.map(base => {
         const c = base.id === "05" ? { ...base, ...currentCase05() } : base;
         const unlocked = hasCase(c.id);
-        return `<article class="file-card ${unlocked ? "" : "locked"}" data-case="${c.id}">
+        return `<article class="file-card ${unlocked ? "" : "locked"}" data-case="${c.id}" data-nav-target="case:${c.id}">
           <span class="file-index">${unlocked ? c.index : "FILE ENCRYPTED"}</span>
           <h3>${unlocked ? c.title : "封存档案"}</h3>
           <p>${unlocked ? c.desc : "需要建立前一案件的关键结论。"}</p>
@@ -517,6 +587,7 @@
   function caseModal(id) {
     clearAttention("cases", id);
     save();
+    render();
     const c = caseData.find(x => x.id === id);
     if (!c || !hasCase(id)) return;
     const files = archiveData.filter(d => d.case === id || (id === "04" && ["passengers", "envelope"].includes(d.id)));
@@ -534,8 +605,16 @@
     };
     const discoveries = (discoveryMap[id] || []).filter(item => item[0] === "S03" ? state.hypotheses.includes("S03") : hasClue(item[0]));
     const supplement = discoveries.length ? `<section class="case-discoveries"><h3>补充发现 · ${discoveries.length}</h3>${discoveries.map(item => `<div class="discovery-row"><span class="discovery-kind ${item[1] === "旁证" ? "support" : ""}">${item[1]}</span><b>${item[2]}</b></div>`).join("")}</section>` : "";
+    const related = {
+      "04": { photos: [["bus","现场照片01"],["tracks","足迹勘验照02"]], people: [["linxue","林雪"],["han","韩敬山"],["guowen","郭文"]] },
+      "00": { photos: [["class","2000班级合照"]], people: [["linxue","林雪"],["luo","罗诚"],["guowen","郭文"]] },
+      "01": { photos: [["camp","2001营地照片"]], people: [["zhou","周启明"],["han","韩敬山"],["lu","陆文山"]] },
+      "03": { photos: [["film","底片 C-12"]], people: [["tang","唐国辉"],["gu","顾宁"],["qiu","邱明"]] },
+      "05": { photos: [], people: [["linchuan","林川"]] }
+    }[id] || { photos: [], people: [] };
+    const assetLinks = `<section class="case-assets"><h3>关联资料</h3><div class="asset-groups"><div><b>文档 ${files.length}</b><span>从原始文字记录开始</span></div><div><b>照片 ${related.photos.length}</b>${related.photos.map(([photo,label]) => `<button data-go-section="photos" data-go-target="photo:${photo}">${label} →</button>`).join("") || `<span>暂无</span>`}</div><div><b>人物 ${related.people.length}</b>${related.people.map(([person,label]) => `<button data-go-section="people" data-go-target="person:${person}">${label} →</button>`).join("") || `<span>暂无</span>`}</div></div></section>`;
     openModal(`<div class="modal-inner"><p class="eyebrow">${c.index}</p><h2>${c.title}</h2><p>${details}</p>${supplement}
-      <h3>关联档案</h3><div class="archive-list">${files.map(d => archiveRow(d, false)).join("") || `<div class="archive-row"><span class="archive-code">NO FILE</span><span class="archive-title">系统仍在建立索引</span></div>`}</div></div>`);
+      ${assetLinks}<h3>关联文档</h3><div class="archive-list">${files.map(d => archiveRow(d, false)).join("") || `<div class="archive-row"><span class="archive-code">NO FILE</span><span class="archive-title">系统仍在建立索引</span></div>`}</div></div>`);
   }
 
   function personStatus(person) {
@@ -562,7 +641,7 @@
     return `<p class="section-lead">人物页区分原始登记与调查补充。确认五条直接关系即可推进；其余关系属于可选的完整调查。</p><div class="people-grid">${orderedPeople().map(p => {
       const status = personStatus(p);
       const found = p.clue && hasClue(p.clue);
-      return `<article class="person-card ${found ? "investigated" : ""}" data-person="${p.id}">
+      return `<article class="person-card ${found ? "investigated" : ""}" data-person="${p.id}" data-nav-target="person:${p.id}">
       <div class="person-avatar"></div><h3>${p.name}</h3><small>${p.age} / ${p.job}</small>${found ? `<i class="investigation-mark">调查补充：${clueData[p.clue][0]}</i>` : ""}<span class="status ${status === "失踪" ? "missing" : ""}">${status}</span>
     </article>`;
     }).join("")}</div>`;
@@ -599,20 +678,20 @@
     const canCompare1976 = hasClue("photo_1976_boy") && hasClue("guowen_red_scarf");
     return `<p class="section-lead">照片没有可见的调查圈。点击你认为异常的物件或人物；详细提示开启后，系统才会标出大致区域。已发现的观察内容会保留在照片下方。</p><div class="photo-grid ${state.hintLevel >= 2 ? "detailed-hints" : ""}">${photos.map(p => {
       const findings = (p.hot || []).filter(([id]) => hasClue(id));
-      return `<article class="photo-card" data-photo-id="${p.id}">
+      return `<article class="photo-card" data-photo-id="${p.id}" data-nav-target="photo:${p.id}">
       <div class="photo-frame ${p.type}">${photoMarkup(p.type)}${(p.hot || []).map((h, hotIndex) => {
         const found = hasClue(h[0]);
         const observation = String(hotIndex + 1).padStart(2, "0");
         return `<button class="hotspot ${found ? "found" : ""}" style="left:${h[1]};top:${h[2]}" data-clue="${h[0]}" data-observation-index="${observation}" aria-label="${found ? clueData[h[0]][0] : "检查照片细节"}">${found ? `${observation} ✓` : ""}</button>`;
       }).join("")}</div>
-      <div class="photo-info"><h3>${p.title}</h3>${p.metaClue ? inspectButton(p.metaClue, p.meta) : `<span>${p.meta}</span>`}</div>
+      <div class="photo-info"><h3>${p.title}${state.attention.includes(`photos:${p.id}`) ? `<em class="update-tag">NEW</em>` : ""}</h3>${p.metaClue ? inspectButton(p.metaClue, p.meta) : `<span>${p.meta}</span>`}</div>
       <button class="photo-expand" data-open-photo="${p.id}" aria-label="放大查看${p.title}">⤢ 放大取证</button>
       ${findings.length ? `<section class="photo-findings"><h4>已记录的观察</h4>${findings.map(([id]) => {
         const observation = String((p.hot || []).findIndex(([hotId]) => hotId === id) + 1).padStart(2, "0");
         return `<div class="photo-finding"><b>观察${observation} · ${clueData[id][0]}</b><p>${clueData[id][1]}</p></div>`;
       }).join("")}</section>` : ""}</article>`;
     }).join("")}</div>
-      ${canCompare ? `<section class="compare-panel"><h3>两张照片出现了相似细节</h3><p>2000合照和2003底片中都出现了红围巾少年。只有主动对照，才能判断是否为同一人。</p><button class="btn ghost" data-compare-photos>${hasClue("guowen_red_scarf") ? "✓ 对比结论已记录" : "对比2000合照与2003底片"}</button></section>` : ""}
+      ${canCompare ? `<section class="compare-panel" data-nav-target="compare:2000-2003"><h3>两张照片出现了相似细节</h3><p>2000合照和2003底片中都出现了红围巾少年。只有主动对照，才能判断是否为同一人。</p><button class="btn ghost" data-compare-photos>${hasClue("guowen_red_scarf") ? "✓ 对比结论已记录" : "对比2000合照与2003底片"}</button></section>` : ""}
       ${canCompare1976 ? `<section class="compare-panel"><h3>旧照片中的少年仍然没有变化</h3><p>把1976年合影中的红围巾少年与2000、2003年的影像逐项对照。</p><button class="btn ghost" data-compare-1976>${state.hidden.includes("H01") ? "✓ 身份冲突已记录" : "对比1976年合影与郭文影像"}</button></section>` : ""}`;
   }
 
@@ -627,11 +706,37 @@
   function archiveRow(doc, lock = true) {
     const available = archiveAvailable(doc);
     const attention = state.attention.includes(`archive:${doc.id}`);
-    return `<article class="archive-row ${available ? "" : "locked"} ${attention ? "has-update" : ""}" ${available ? `data-doc="${doc.id}"` : ""}><span class="archive-code">${available ? doc.code : "RESTRICTED"}</span><span class="archive-title">${available ? doc.title : "访问权限不足"}${attention ? `<em class="update-tag">UPDATE</em>` : ""}</span><span class="archive-meta">${available ? doc.meta : "LOCKED"}</span></article>`;
+    const tag = doc.case ? "NEW" : "UPDATE";
+    return `<article class="archive-row ${available ? "" : "locked"} ${attention ? "has-update" : ""}" data-nav-target="doc:${doc.id}" ${available ? `data-doc="${doc.id}"` : ""}><span class="archive-code">${available ? doc.code : "RESTRICTED"}</span><span class="archive-title">${available ? doc.title : "访问权限不足"}${attention ? `<em class="update-tag">${tag}</em>` : ""}</span><span class="archive-meta">${available ? doc.meta : "LOCKED"}</span></article>`;
+  }
+
+  function activeCaseId() {
+    if (!hasEvidence("EV01") || !hasEvidence("EV10")) return "04";
+    if (!hasEvidence("EV02")) return "00";
+    if (!hasEvidence("EV04")) return "01";
+    if (!hasEvidence("EV08")) return "03";
+    if (!hasEvidence("EV16")) return "04";
+    return null;
+  }
+
+  function docBelongsToCase(doc, caseId) {
+    if (doc.case === caseId) return true;
+    if (caseId === "04" && ["envelope", "passengers", "snowSurvey", "weather", "memo"].includes(doc.id)) return true;
+    return false;
   }
 
   function renderArchive() {
-    return `<p class="section-lead">所有资料均为静态档案。部分文档中的异常需要手动记录，记录后的条目会出现在证据板。</p><div class="archive-list">${archiveData.map(d => archiveRow(d)).join("")}</div>`;
+    const filter = ["all", "current", "updates", "unchecked"].includes(state.archiveFilter) ? state.archiveFilter : "all";
+    const caseId = activeCaseId();
+    const currentTarget = currentInvestigation().target;
+    const docs = archiveData.filter(doc => {
+      if (filter === "all") return true;
+      if (filter === "updates") return state.attention.includes(`archive:${doc.id}`);
+      if (filter === "unchecked") return archiveAvailable(doc) && !state.viewed.includes(doc.id);
+      return archiveAvailable(doc) && (docBelongsToCase(doc, caseId) || currentTarget === `doc:${doc.id}`);
+    });
+    const filters = [["all","全部"],["current","当前案件"],["updates","NEW / UPDATE"],["unchecked","未检查"]];
+    return `<p class="section-lead">筛选只改变文件排列，不会揭示档案中的异常。NEW在首次打开原始文件后消失。</p><div class="archive-filters" role="group" aria-label="资料筛选">${filters.map(([id,label]) => `<button class="${filter === id ? "active" : ""}" data-archive-filter="${id}">${label}</button>`).join("")}</div><div class="archive-list">${docs.length ? docs.map(d => archiveRow(d)).join("") : `<div class="empty-filter">此筛选下没有待处理文件。</div>`}</div>`;
   }
 
   function inspectButton(clue, label) {
@@ -672,7 +777,7 @@
   function renderWeb() {
     const history = state.searches.slice().reverse();
     return `<div class="search-panel"><p class="section-lead">恢复自2000—2005年的网页缓存。只有资料中出现过的关键词会返回有效结果。</p>
-      <form class="search-box" id="search-form"><input id="search-input" autocomplete="off" placeholder="输入档案中出现过的关键词或组合词…" aria-label="搜索旧网页"><button>检索</button></form>
+      <form class="search-box" id="search-form"><input id="search-input" data-nav-target="web:search" autocomplete="off" placeholder="输入档案中出现过的关键词或组合词…" aria-label="搜索旧网页"><button>检索</button></form>
       <div class="search-results">${history.length ? history.map(searchResult).join("") : `<div class="search-result"><span class="search-url">LOCAL INDEX / WAITING</span><h3>最近搜索：暂无</h3><p>可从档案中出现过的人名、地点、日期或项目编号开始。</p></div>`}</div></div>`;
   }
 
@@ -747,7 +852,7 @@
       const known = hasClue(e[2]);
       return `<div class="timeline-event ${known ? "alert" : ""}"><span class="timeline-time">${e[0]} · ${known ? "19:47" : "未确认"}</span><div class="timeline-copy"><b>${e[1]}</b><span>${known ? e[3] : "等待原始记录"}</span></div></div>`;
     }).join("")}</div><p class="section-lead">${prompt}</p>
-      ${confirmed === 4 ? `<button class="btn ghost" data-compare-times>${hasClue("case_times") ? "✓ 跨案件时间已记录" : "比对四案记录"}</button>` : ""}`;
+      ${confirmed === 4 ? `<button class="btn ghost" data-nav-target="timeline:compare" data-compare-times>${hasClue("case_times") ? "✓ 跨案件时间已记录" : "比对四案记录"}</button>` : ""}`;
   }
 
   function reasoningToken(id) {
@@ -767,12 +872,29 @@
     ticket_xu: "5B椅背夹层残票", xu_deleted: "2004乘车索引缓存"
   };
 
+  const clueSourceTargets = {
+    passenger_count: ["archive","doc:passengers"], passenger_links: ["people","person:linxue"], seat_gap: ["archive","doc:passengers"], footprints: ["photos","photo:tracks"],
+    snow_depth: ["archive","doc:snowSurvey"], official_photo_time: ["photos","photo:bus"], original_photo_time: ["archive","doc:memo"],
+    leave_count: ["archive","doc:leave"], missing17: ["archive","doc:roster"], health_guowen: ["archive","doc:physical"],
+    five_cups: ["archive","doc:camp"], four_supplies: ["archive","doc:supplies"], team_six: ["archive","doc:crew"], photo_seventh: ["photos","photo:film"],
+    guowen_red_scarf: ["photos","compare:2000-2003"], weather_record: ["archive","doc:weather"], forecast_eight: ["archive","doc:memo"],
+    case_times: ["timeline","timeline:compare"], repeated_time: ["web","web:search"], ame_partial: ["archive","doc:facility"], experiment_seven: ["archive","doc:memo"],
+    ame_report: ["archive","doc:ame"], extra_member: ["archive","doc:ame"], facility: ["archive","doc:facility"], ticket_xu: ["archive","doc:passengers"], xu_deleted: ["web","web:search"],
+    time_2000: ["archive","doc:leave"], time_2001: ["archive","doc:camp"], time_2003: ["archive","doc:crew"], time_2004: ["archive","doc:memo"]
+  };
+
   function clueVerification(id) {
     const completed = [...recipes.filter(r => hasEvidence(r.id)), ...hypothesisRecipes.filter(r => state.hypotheses.includes(r.id)), ...discoveryRecipes.filter(r => hasClue(r.id))];
     if (completed.some(item => item.needs.includes(id))) return "已用于结论";
     const candidates = [...recipes, ...hypothesisRecipes, ...discoveryRecipes].filter(item => !hasEvidence(item.id) && !state.hypotheses.includes(item.id) && !hasClue(item.id) && item.needs.includes(id));
     if (candidates.some(item => item.needs.every(need => need === id || hasClue(need) || state.hypotheses.includes(need)))) return "可建立结论";
     return "待独立佐证";
+  }
+
+  function renderClueCard(id, selected) {
+    const token = reasoningToken(id);
+    const source = clueSourceTargets[id];
+    return `<article class="clue-card" data-nav-target="clue:${id}"><button class="clue-chip ${selected.includes(id) ? "selected" : ""}" data-select-clue="${id}"><b>${token[0]}</b><span class="clue-origin">来源：${clueSources[id] || "已检查的原始档案"}</span><span class="clue-state">${clueVerification(id)}</span><small>${token[1]}</small></button>${source ? `<button class="source-return" data-go-section="${source[0]}" data-go-target="${source[1]}">返回原始来源 ↗</button>` : ""}</article>`;
   }
 
   function investigationDirections() {
@@ -823,8 +945,14 @@
     const evidenceCards = recipes.filter(r => hasEvidence(r.id));
     const hypotheses = hypothesisRecipes.filter(h => state.hypotheses.includes(h.id));
     const directions = investigationDirections();
+    const investigation = currentInvestigation();
+    const targetClue = investigation.target.startsWith("clue:") ? investigation.target.slice(5) : "";
+    const ready = investigation.section === "evidence" ? [...recipes, ...hypothesisRecipes, ...discoveryRecipes].find(item =>
+      !hasEvidence(item.id) && !state.hypotheses.includes(item.id) && !hasClue(item.id) && item.needs.includes(targetClue) && item.needs.every(need => hasClue(need) || state.hypotheses.includes(need))) : null;
+    const currentClues = ready ? boardClues.filter(id => ready.needs.includes(id)) : [];
+    const otherClues = boardClues.filter(id => !currentClues.includes(id));
     return `<p class="section-lead">选择2—3条已发现线索，尝试建立结论。无效组合不会损失进度。</p><div class="evidence-layout">
-      <section class="clue-bank"><h3>可用于推理的线索 · ${boardClues.length}</h3><div class="clue-chips">${boardClues.length ? boardClues.map(id => { const token = reasoningToken(id); return `<button class="clue-chip ${selected.includes(id) ? "selected" : ""}" data-select-clue="${id}"><b>${token[0]}</b><span class="clue-origin">来源：${clueSources[id] || "已检查的原始档案"}</span><span class="clue-state">${clueVerification(id)}</span><small>${token[1]}</small></button>`; }).join("") : `<span class="section-lead">检查照片、人物与文档以记录线索。</span>`}</div></section>
+      <section class="clue-bank">${currentClues.length ? `<div class="current-clue-group"><h3>当前调查相关 · ${currentClues.length}</h3><p>这些材料已经由你发现；分组不代表它们一定能形成结论。</p><div class="clue-chips">${currentClues.map(id => renderClueCard(id, selected)).join("")}</div></div>` : ""}<h3>${currentClues.length ? "其他已记录" : "可用于推理的线索"} · ${otherClues.length}</h3><div class="clue-chips">${otherClues.length ? otherClues.map(id => renderClueCard(id, selected)).join("") : `<span class="section-lead">检查照片、人物与文档以记录线索。</span>`}</div></section>
       <section class="conclusion-panel"><h3>推理槽</h3><div class="combine-tray ${selected.length ? "" : "empty"}">${selected.map(id => `<button class="clue-chip selected" data-select-clue="${id}">${reasoningToken(id)[0]}</button>`).join("")}</div><button class="combine-btn" data-combine ${selected.length < 2 ? "disabled" : ""}>建立结论</button></section>
     </div>${hasClue("ame_code") ? `<article class="keyword-recovery"><span class="ev-code">RECOVERED SEARCH KEY</span><b>AME-7</b><p>完整项目编号已经复原。前往旧网页索引检索该编号。</p></article>` : ""}<div class="evidence-cards">${evidenceCards.map(r => `<article class="evidence-card"><span class="ev-code">EVIDENCE ${String(recipes.indexOf(r) + 1).padStart(2, "0")} / ${recipes.length}</span><h4>${r.title}</h4><p>${r.text}</p></article>`).join("")}</div>
       ${hypotheses.length ? `<h3>调查假设</h3><div class="evidence-cards">${hypotheses.map(h => {
@@ -921,12 +1049,13 @@
       [hasEvidence("EV18"), "地下设施 / AME-7"], [state.hidden.includes("H01"), "1976历史断点"]
     ];
     const currentStage = stages.findIndex(stage => !stage[0]);
-    const terms = [];
-    if (hasSystem("web") && hasClue("case_times")) terms.push("白岭 19:47");
-    if (hasSystem("web") && hasEvidence("EV16") && !hasDoc("facility")) terms.push("北山 地下设施");
-    if (hasSystem("web") && hasClue("ame_code") && !hasDoc("ame")) terms.push("AME-7");
-    if (hasSystem("web") && hasEvidence("EV18") && !hasDoc("photo1976")) terms.push("白岭 红围巾");
-    return `<section class="route-hint"><p class="eyebrow">导航提示 · 不揭示答案</p><p>当前建议使用：<b>${sectionTitles[currentInvestigation().section][1]}</b>。详细推理提示仍由右侧三层提示单独控制。</p></section><div class="notes-layout"><section><p class="section-lead">调查目标会自动更新，但不会直接给出答案。</p><div class="investigation-chain">${stages.map((stage, index) => `<span class="${stage[0] ? "done" : index === currentStage ? "current" : "locked"}">${stage[0] ? "✓" : index === currentStage ? "→" : "?"} ${stage[1]}</span>`).join("")}</div><div class="todo-list">${objectives().map(o => `<div class="todo ${o[0] ? "done" : ""}">${o[1]}</div>`).join("")}</div>${terms.length ? `<section class="known-terms"><h3>已知检索词</h3><p>点击只会填入检索框，不会自动执行检索。</p>${terms.map(term => `<button data-search-term="${term}">${term}</button>`).join("")}</section>` : ""}</section>
+    const termGroups = [];
+    if (hasSystem("web") && hasClue("case_times") && !hasClue("repeated_time")) termGroups.push(["白岭", "19:47"]);
+    if (hasSystem("web") && hasEvidence("EV16") && !hasDoc("facility")) termGroups.push(["北山", "维修井"]);
+    if (hasSystem("web") && hasEvidence("EV18") && !hasDoc("photo1976")) termGroups.push(["白岭", "红围巾"]);
+    const directTerms = hasSystem("web") && hasClue("ame_code") && !hasDoc("ame") ? ["AME-7"] : [];
+    const hasTerms = termGroups.length || directTerms.length;
+    return `<section class="route-hint"><p class="eyebrow">导航提示 · 不揭示答案</p><p>当前建议使用：<b>${sectionTitles[currentInvestigation().section][1]}</b>。详细推理提示仍由右侧三层提示单独控制。</p></section><div class="notes-layout"><section><p class="section-lead">调查目标会自动更新，但不会直接给出答案。</p><div class="investigation-chain">${stages.map((stage, index) => `<span class="${stage[0] ? "done" : index === currentStage ? "current" : "locked"}">${stage[0] ? "✓" : index === currentStage ? "→" : "?"} ${stage[1]}</span>`).join("")}</div><div class="todo-list">${objectives().map(o => `<div class="todo ${o[0] ? "done" : ""}">${o[1]}</div>`).join("")}</div>${hasTerms ? `<section class="known-terms"><h3>已知检索词</h3><p>普通词条需由你自行组合；完整编号可直接带入。两种操作都不会自动搜索。</p>${termGroups.map(group => `<div class="term-group">${group.map(term => `<button class="${state.searchDraft.includes(term) ? "active" : ""}" data-search-token="${term}">${term}</button>`).join(`<span>＋</span>`)}</div>`).join("")}${directTerms.map(term => `<button data-search-term="${term}">${term} ↗</button>`).join("")}${state.searchDraft.length ? `<div class="search-draft"><span>待检索：${state.searchDraft.join(" + ")}</span><button data-use-search-draft>填入旧网页</button></div>` : ""}</section>` : ""}</section>
       <aside class="hint-card"><p class="eyebrow">详细推理提示 ${level + 1} / 3</p><p>${hints[level]}</p><button data-hint>${level < 2 ? "再给一点提示" : "重置提示层级"}</button></aside></div>`;
   }
 
@@ -1094,9 +1223,10 @@
     document.body.style.overflow = "hidden";
   }
 
-  function closeModal() {
+  function closeModal(refresh = false) {
     $("#modal").hidden = true;
     document.body.style.overflow = "";
+    if (refresh && !$("#game").hidden) render();
   }
 
   function openPhotoViewer(frame) {
@@ -1135,7 +1265,7 @@
       else if (frame) toast("照片检查", "这里没有发现值得记录的东西。");
       return;
     }
-    if (target.matches("[data-close-modal]")) return closeModal();
+    if (target.matches("[data-close-modal]")) return closeModal(true);
     if (target.dataset.openPhoto) {
       const frame = target.closest(".photo-card")?.querySelector(".photo-frame");
       clearAttention("photos", target.dataset.openPhoto);
@@ -1144,8 +1274,20 @@
       if (frame) openPhotoViewer(frame);
       return;
     }
-    if (target.dataset.goSection) return switchSection(target.dataset.goSection);
+    if (target.dataset.goSection) return navigateTo(target.dataset.goSection, target.dataset.goTarget || "", target.dataset.lineId || "");
     if (target.dataset.section) return switchSection(target.dataset.section);
+    if (target.dataset.toggleLine) {
+      const id = target.dataset.toggleLine;
+      if (state.expandedLine === id || !state.seenLines.includes(id)) {
+        addUnique(state.seenLines, id);
+        state.expandedLine = null;
+      } else state.expandedLine = id;
+      save(); render(); return;
+    }
+    if (target.dataset.archiveFilter) {
+      state.archiveFilter = target.dataset.archiveFilter;
+      save(); render(); return;
+    }
     if (target.hasAttribute("data-confirm-final")) return confirmFinalPhase();
     if (target.hasAttribute("data-start-final")) return startFinalPhase();
     if (target.dataset.case) return caseModal(target.dataset.case);
@@ -1219,6 +1361,21 @@
       if (input) { input.value = term; input.focus(); }
       return;
     }
+    if (target.dataset.searchToken) {
+      const term = target.dataset.searchToken;
+      if (state.searchDraft.includes(term)) state.searchDraft = state.searchDraft.filter(item => item !== term);
+      else addUnique(state.searchDraft, term);
+      save(); render(); return;
+    }
+    if (target.hasAttribute("data-use-search-draft")) {
+      const term = state.searchDraft.join(" ");
+      state.searchDraft = [];
+      switchSection("web");
+      const input = $("#search-input");
+      if (input) { input.value = term; input.focus(); }
+      save();
+      return;
+    }
     if (target.hasAttribute("data-hint")) {
       state.hintLevel = state.hintLevel >= 2 ? 0 : state.hintLevel + 1;
       save(); render(); return;
@@ -1249,8 +1406,7 @@
   $("#ending-archive").addEventListener("click", openEndingArchive);
   $("#clear-all-records").addEventListener("click", clearAllRecords);
   $("#mobile-menu").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
-  $("#modal").addEventListener("click", e => { if (e.target.matches("[data-close-modal]")) closeModal(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#modal").hidden) closeModal(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#modal").hidden) closeModal(true); });
 
   loadMeta();
   load();

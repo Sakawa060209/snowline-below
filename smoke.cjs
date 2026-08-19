@@ -64,7 +64,11 @@ async function loadSave(page, partial) {
   await click(page, "#new-game");
   await click(page, ".modal-close");
   const openingLine = await page.locator(".current-line").innerText();
-  if (!openingLine.includes("车上究竟登记了多少人") || !openingLine.includes("查看乘客名单")) throw new Error(`Opening investigation line is not actionable: ${openingLine}`);
+  if (!openingLine.includes("登记人数与座位使用情况是否一致") || !openingLine.includes("定位乘客名单") || openingLine.includes("八组脚印")) throw new Error(`Opening investigation line is not actionable or answer-neutral: ${openingLine}`);
+  await click(page, '[data-go-target="doc:passengers"]');
+  await page.locator('[data-nav-target="doc:passengers"].current-target').waitFor();
+  if (await page.locator("#modal:not([hidden])").count()) throw new Error("Precise navigation opened the target document instead of only locating it");
+  if (!await page.locator(".current-line.compact").count()) throw new Error("Investigation line did not collapse after it was used");
   await click(page, '[data-section="evidence"]');
   let directionText = await page.locator(".investigation-directions").innerText();
   if (!directionText.includes("暴雪事故") || directionText.includes("地下实验") || directionText.includes("第七人")) throw new Error(`Opening investigation directions leaked future explanations: ${directionText}`);
@@ -106,10 +110,34 @@ async function loadSave(page, partial) {
   directionText = await page.locator(".investigation-directions").innerText();
   if (!directionText.includes("未知人为因素？") || directionText.includes("地下实验") || directionText.includes("第七人")) throw new Error(`First count contradiction did not reveal only an unnamed direction: ${directionText}`);
 
+  const case00Line = await page.locator(".current-line").innerText();
+  if (!case00Line.includes("新档案恢复：2000") || !case00Line.includes("查看CASE 01")) throw new Error(`New case did not take navigation priority: ${case00Line}`);
+  await click(page, '[data-go-target="case:00"]');
+  await page.locator('[data-nav-target="case:00"].current-target').waitFor();
+  await click(page, '[data-case="00"]');
+  const case00Hub = await page.locator("#modal-content").innerText();
+  if (!case00Hub.includes("关联资料") || !case00Hub.includes("文档 3") || !case00Hub.includes("2000班级合照") || !case00Hub.includes("郭文")) throw new Error(`CASE 01 is not a usable investigation hub: ${case00Hub}`);
+  await click(page, ".modal-close");
+  await click(page, '[data-section="archive"]');
+  await click(page, '[data-archive-filter="updates"]');
+  const updateArchive = await page.locator("#content .archive-list").innerText();
+  if (!["请假登记", "学生编号索引", "年度体检表"].every(text => updateArchive.includes(text)) || !updateArchive.includes("NEW")) throw new Error(`New CASE 01 documents were not marked once: ${updateArchive}`);
+  await click(page, '[data-archive-filter="all"]');
+  await click(page, '[data-section="photos"]');
+  if (!(await page.locator('[data-photo-id="class"]').innerText()).includes("NEW")) throw new Error("New CASE 01 photograph was not marked NEW");
+
   await openDoc(page, "leave", ["leave_count", "time_2000"]);
   await openDoc(page, "roster", ["missing17"]);
+  const missingIdentityLine = await page.locator(".current-line").innerText();
+  if (!missingIdentityLine.includes("缺失编号是否留下过独立身份记录") || !missingIdentityLine.includes("定位体检残页") || missingIdentityLine.includes("请假人数、连续学号和体检表")) throw new Error(`Investigation line did not narrow to the one missing 2000 source: ${missingIdentityLine}`);
   await openDoc(page, "physical", ["health_guowen"]);
   await combine(page, ["leave_count", "missing17", "health_guowen"]);
+
+  const case01Line = await page.locator(".current-line").innerText();
+  if (!case01Line.includes("新档案恢复：2001")) throw new Error(`CASE 02 summary was not prioritized: ${case01Line}`);
+  await click(page, '[data-go-target="case:01"]');
+  await click(page, '[data-case="01"]');
+  await click(page, ".modal-close");
 
   await openDoc(page, "camp", ["five_cups", "camp_five_depressions", "time_2001"]);
   await click(page, '[data-section="archive"]');
@@ -121,7 +149,20 @@ async function loadSave(page, partial) {
   if (!(await page.locator(".case-discoveries").innerText()).includes("旁证")) throw new Error("2001 supplemental finding was not separated from core evidence");
   await click(page, ".modal-close");
   await openDoc(page, "supplies", ["four_supplies"]);
+  await click(page, '[data-section="evidence"]');
+  const currentMaterials = await page.locator(".current-clue-group").innerText();
+  if (!currentMaterials.includes("第五只杯子") || !currentMaterials.includes("四人份物资") || !currentMaterials.includes("分组不代表")) throw new Error(`Evidence board did not separate current discovered materials: ${currentMaterials}`);
+  await click(page, '.current-clue-group [data-go-target="doc:camp"]');
+  await page.locator('[data-nav-target="doc:camp"].current-target').waitFor();
+  if (await page.locator("#modal:not([hidden])").count()) throw new Error("Returning to a clue source auto-opened the archive document");
   await combine(page, ["five_cups", "four_supplies"]);
+
+  const case03Line = await page.locator(".current-line").innerText();
+  if (!case03Line.includes("新档案恢复：2003")) throw new Error(`CASE 03 summary was not prioritized: ${case03Line}`);
+  await click(page, '[data-go-target="case:03"]');
+  await click(page, '[data-case="03"]');
+  if (!(await page.locator("#modal-content").innerText()).includes("底片 C-12")) throw new Error("CASE 03 hub did not link its photograph");
+  await click(page, ".modal-close");
 
   await openDoc(page, "crew", ["team_six", "meal_seven", "time_2003"]);
   await click(page, '[data-section="photos"]');
@@ -130,8 +171,13 @@ async function loadSave(page, partial) {
   await click(page, '[data-compare-photos]');
   await combine(page, ["team_six", "photo_seventh"]);
   await combine(page, ["photo_seventh", "guowen_red_scarf"]);
+  if ((await page.locator(".current-line").innerText()).includes("新档案恢复：2005")) {
+    await click(page, '[data-go-target="case:05"]');
+    await click(page, '[data-case="05"]');
+    await click(page, ".modal-close");
+  }
   const revisitLine = await page.locator(".current-line").innerText();
-  if (!revisitLine.includes("重新检查最初的2004现场") || !revisitLine.includes("复查2004资料")) throw new Error(`Post-EV08 route did not return the player to 2004: ${revisitLine}`);
+  if (!revisitLine.includes("现场测量对应哪一个时间段") || !revisitLine.includes("定位逐时气象记录") || revisitLine.includes("脚印8")) throw new Error(`Post-EV08 route was not precise and answer-neutral: ${revisitLine}`);
 
   await click(page, '[data-section="archive"]');
   await click(page, '[data-doc="passengers"]');
@@ -169,10 +215,13 @@ async function loadSave(page, partial) {
 
   await click(page, '[data-section="notes"]');
   const notesText = await page.locator("#content").innerText();
-  if (!notesText.includes("导航提示 · 不揭示答案") || !notesText.includes("调查目标") || !notesText.includes("北山 地下设施")) throw new Error(`Investigation notes did not separate navigation and detailed hints: ${notesText}`);
+  if (!notesText.includes("导航提示 · 不揭示答案") || !notesText.includes("调查目标") || !notesText.includes("北山") || !notesText.includes("维修井") || notesText.includes("北山 地下设施")) throw new Error(`Investigation notes did not keep facility search terms separate: ${notesText}`);
   const searchCountBeforeFill = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).searches.length);
-  await click(page, '[data-search-term="北山 地下设施"]');
-  if (await page.locator("#search-input").inputValue() !== "北山 地下设施") throw new Error("Known search term did not populate the search field");
+  await click(page, '[data-search-token="北山"]');
+  await click(page, '[data-search-token="维修井"]');
+  if (!(await page.locator(".search-draft").innerText()).includes("北山 + 维修井")) throw new Error("Known terms could not be manually combined");
+  await click(page, '[data-use-search-draft]');
+  if (await page.locator("#search-input").inputValue() !== "北山 维修井") throw new Error("Combined known terms did not populate the search field");
   const searchCountAfterFill = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).searches.length);
   if (searchCountAfterFill !== searchCountBeforeFill) throw new Error("Known search term executed a search instead of only filling the field");
 
@@ -278,7 +327,7 @@ async function loadSave(page, partial) {
   });
   await guard.reload({ waitUntil: "domcontentloaded" });
   const migrated = await guard.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
-  if (migrated.version !== 2 || !migrated.evidence.includes("EV01") || migrated.ending || migrated.finalChoices.length) throw new Error("Version 1 save migration failed");
+  if (migrated.version !== 2 || !migrated.evidence.includes("EV01") || migrated.ending || migrated.finalChoices.length || migrated.archiveFilter !== "all" || !Array.isArray(migrated.seenLines) || !Array.isArray(migrated.searchDraft)) throw new Error("Version 1 save migration failed");
   guard.on("dialog", async dialog => { sawConfirm = true; await dialog.dismiss(); });
   await click(guard, "#new-game");
   if (!sawConfirm) throw new Error("Starting a new investigation did not request confirmation");
@@ -472,6 +521,8 @@ async function loadSave(page, partial) {
   await click(mobile, '[data-select-clue="footprints"]');
   await click(mobile, "[data-combine]");
   if (!(await mobile.locator("#evidence-count").textContent()).includes("1 / 10")) throw new Error("Mobile evidence flow failed");
+  const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  if (mobileOverflow > 1) throw new Error(`Mobile layout has document-level horizontal overflow: ${mobileOverflow}px`);
   await mobile.evaluate(() => document.querySelectorAll(".toast").forEach(node => node.remove()));
   await mobile.waitForTimeout(250);
   await mobile.screenshot({ path: path.join(root, "smoke-mobile.png"), fullPage: true });
