@@ -22,7 +22,10 @@ async function openDoc(page, id, clues) {
 
 async function combine(page, clueIds) {
   await click(page, '[data-section="evidence"]');
-  for (const id of clueIds) await click(page, `[data-select-clue="${id}"]`);
+  for (const id of clueIds) {
+    if (!await page.locator(`[data-select-clue="${id}"]`).count() && await page.locator("[data-toggle-other-clues]").count()) await click(page, "[data-toggle-other-clues]");
+    await click(page, `[data-select-clue="${id}"]`);
+  }
   await click(page, "[data-combine]");
 }
 
@@ -77,8 +80,12 @@ async function loadSave(page, partial) {
   if (!await page.locator(".current-line.compact").count()) throw new Error("An ordinary new investigation gap expanded like a chapter transition");
   await inspectPerson(page, "guowen", "guowen_identity");
   await combine(page, ["passenger_count", "seat_gap"]);
+  await inspectPerson(page, "linxue", "link_linxue");
+  const openPeopleRoute = await page.locator(".current-line").innerText();
+  if (!openPeopleRoute.includes("浏览未读乘客") || openPeopleRoute.includes("定位下一名乘客")) throw new Error(`Character browsing still prescribed a card-by-card order: ${openPeopleRoute}`);
+  if (await page.locator(".unread-tag").count() < 4) throw new Error("Unread character cards were not marked with weak UNREAD labels");
   for (const [id, clue] of [
-    ["linxue", "link_linxue"], ["zhou", "link_zhou"], ["luo", "link_luo"], ["han", "link_han"],
+    ["zhou", "link_zhou"], ["luo", "link_luo"], ["han", "link_han"],
     ["lu", "link_lu"], ["tang", "link_tang"], ["gu", "link_gu"], ["qiu", "link_qiu"]
   ]) await inspectPerson(page, id, clue);
   await click(page, '[data-section="photos"]');
@@ -133,6 +140,7 @@ async function loadSave(page, partial) {
   if (!missingIdentityLine.includes("缺失编号是否留下过独立身份记录") || !missingIdentityLine.includes("定位体检残页") || missingIdentityLine.includes("请假人数、连续学号和体检表")) throw new Error(`Investigation line did not narrow to the one missing 2000 source: ${missingIdentityLine}`);
   await openDoc(page, "physical", ["health_guowen"]);
   await combine(page, ["leave_count", "missing17", "health_guowen"]);
+  if (!(await page.locator(".human-reaction").innerText()).includes("老师点到第七个名字")) throw new Error("2000 conclusion did not surface a non-evidence human reaction");
 
   const case01Line = await page.locator(".current-line").innerText();
   if (!case01Line.includes("新档案恢复：2001")) throw new Error(`CASE 02 summary was not prioritized: ${case01Line}`);
@@ -153,10 +161,14 @@ async function loadSave(page, partial) {
   await click(page, '[data-section="evidence"]');
   const currentMaterials = await page.locator(".current-clue-group").innerText();
   if (!["2001营地", "第五只杯子", "五处睡眠压痕", "四人份物资", "系统不会标出正确组合"].every(text => currentMaterials.includes(text))) throw new Error(`Evidence board did not present a broad case-topic group: ${currentMaterials}`);
+  if ((await page.locator("[data-toggle-other-clues]").getAttribute("aria-expanded")) !== "false" || await page.locator('[data-select-clue="passenger_count"]').count()) throw new Error("Non-current evidence did not default to a compact folded group");
+  await click(page, "[data-toggle-other-clues]");
+  if (!await page.locator('[data-select-clue="passenger_count"]').count()) throw new Error("Folded evidence could not be expanded on demand");
   await click(page, '.current-clue-group [data-go-target="doc:camp"]');
   await page.locator('[data-nav-target="doc:camp"].current-target').waitFor();
   if (await page.locator("#modal:not([hidden])").count()) throw new Error("Returning to a clue source auto-opened the archive document");
   await combine(page, ["five_cups", "four_supplies"]);
+  if (!(await page.locator(".human-reaction").innerText()).includes("为什么准备了第五个杯子")) throw new Error("2001 conclusion did not interrupt the numeric pattern with a human reaction");
 
   const case03Line = await page.locator(".current-line").innerText();
   if (!case03Line.includes("新档案恢复：2003")) throw new Error(`CASE 03 summary was not prioritized: ${case03Line}`);
@@ -166,12 +178,17 @@ async function loadSave(page, partial) {
   await click(page, ".modal-close");
 
   await openDoc(page, "crew", ["team_six", "meal_seven", "time_2003"]);
+  await click(page, '[data-section="archive"]');
+  await click(page, '[data-doc="crew"]');
+  if (await page.locator(".document-fact-lines p").count() !== 3) throw new Error("Multi-clue crew paragraph was not split into three touch-friendly semantic lines");
+  await click(page, ".modal-close");
   await click(page, '[data-section="photos"]');
   await click(page, '[data-clue="class_red_scarf"]');
   await click(page, '[data-clue="photo_seventh"]');
   await click(page, '[data-compare-photos]');
   await combine(page, ["team_six", "photo_seventh"]);
   await combine(page, ["photo_seventh", "guowen_red_scarf"]);
+  if (!(await page.locator(".human-reaction").innerText()).includes("昨天没有见过他")) throw new Error("2003 conclusion did not surface Chen Yuan's reaction");
   if ((await page.locator(".current-line").innerText()).includes("新档案恢复：2005")) {
     await click(page, '[data-go-target="case:05"]');
     await click(page, '[data-case="05"]');
@@ -206,6 +223,12 @@ async function loadSave(page, partial) {
   await openDoc(page, "memo", ["forecast_eight", "time_2004", "original_photo_time", "experiment_seven"]);
   await combine(page, ["official_photo_time", "original_photo_time"]);
   await combine(page, ["forecast_eight", "footprints"]);
+  const firstCase05Update = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (firstCase05Update.case05Stage !== 1 || firstCase05Update.case05SeenStage !== 0) throw new Error("CASE05 first change did not wait in an unseen stage");
+  await click(page, '[data-section="cases"]');
+  await click(page, '[data-case="05"]');
+  if (!(await page.locator("#modal-content").innerText()).includes("失联人员：1")) throw new Error("Natural flow could not witness CASE05 stage 1");
+  await click(page, "[data-close-modal]");
 
   await click(page, '[data-section="timeline"]');
   await click(page, '[data-compare-times]');
@@ -219,7 +242,7 @@ async function loadSave(page, partial) {
   if (!notesText.includes("导航提示 · 不揭示答案") || !notesText.includes("调查目标") || !notesText.includes("北山") || !notesText.includes("维修井") || notesText.includes("北山 地下设施")) throw new Error(`Investigation notes did not keep facility search terms separate: ${notesText}`);
   if (await page.locator(".term-group").count()) throw new Error("Search word bank still grouped the intended answer terms");
   const recentBeforeReload = await page.locator(".recent-conclusions").innerText();
-  if (!recentBeforeReload.includes("最近阶段结论") || !recentBeforeReload.includes("19:47")) throw new Error(`Recent conclusions were not retained as investigation context: ${recentBeforeReload}`);
+  if (!recentBeforeReload.includes("林川调查笔记") || !recentBeforeReload.includes("19:47") || !recentBeforeReload.includes("“")) throw new Error(`First-person recent conclusions were not retained as investigation context: ${recentBeforeReload}`);
   const searchCountBeforeFill = await page.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).searches.length);
   await click(page, '[data-search-token="北山"]');
   await click(page, '[data-search-token="维修井"]');
@@ -335,7 +358,7 @@ async function loadSave(page, partial) {
   });
   await guard.reload({ waitUntil: "domcontentloaded" });
   const migrated = await guard.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
-  if (migrated.version !== 2 || !migrated.evidence.includes("EV01") || migrated.ending || migrated.finalChoices.length || migrated.archiveFilter !== "all" || !Array.isArray(migrated.seenLines) || !Array.isArray(migrated.searchDraft)) throw new Error("Version 1 save migration failed");
+  if (migrated.version !== 2 || !migrated.evidence.includes("EV01") || migrated.ending || migrated.finalChoices.length || migrated.archiveFilter !== "all" || !Array.isArray(migrated.seenLines) || !Array.isArray(migrated.searchDraft) || typeof migrated.case05SeenStage !== "number" || typeof migrated.otherCluesExpanded !== "boolean" || typeof migrated.evidenceThemeKey !== "string") throw new Error("Version 1 save migration failed");
   guard.on("dialog", async dialog => { sawConfirm = true; await dialog.dismiss(); });
   await click(guard, "#new-game");
   if (!sawConfirm) throw new Error("Starting a new investigation did not request confirmation");
@@ -352,6 +375,27 @@ async function loadSave(page, partial) {
     await search(logic, query);
     if (!(await logic.locator(".search-result").first().innerText()).includes("2004-12-18")) throw new Error(`Reasonable Xu search variant was rejected: ${query}`);
   }
+  await search(logic, "北山");
+  const broadSearch = await logic.locator(".search-result").first().innerText();
+  if (!["维修站冬季招聘", "道路养护公告", "北坡工程图"].every(text => broadSearch.includes(text))) throw new Error(`Broad search did not return believable damaged index noise: ${broadSearch}`);
+  await loadSave(logic, {
+    section: "evidence",
+    unlockedCases: ["04", "00", "01", "03"],
+    unlockedSystems: ["photos", "evidence"],
+    viewed: ["envelope"],
+    clues: ["photo_seventh", "guowen_red_scarf"]
+  });
+  await combine(logic, ["photo_seventh", "guowen_red_scarf"]);
+  let envelopeUpdate = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (!envelopeUpdate.attention.includes("archive:envelope") || !envelopeUpdate.viewed.includes("envelope_update_notified")) throw new Error("H02 availability did not mark the previously read envelope exactly once");
+  if (!(await logic.locator(".toast").filter({ hasText: "资料 UPDATE" }).innerText()).includes("新的可检查痕迹")) throw new Error("Envelope UPDATE was missing or spoiled the hidden letter");
+  await click(logic, '[data-section="archive"]');
+  if (!(await logic.locator('[data-doc="envelope"]').innerText()).includes("UPDATE")) throw new Error("Envelope archive row did not retain its UPDATE marker");
+  await click(logic, '[data-doc="envelope"]');
+  await click(logic, '[data-hidden="H02"]');
+  await click(logic, "[data-close-modal]");
+  envelopeUpdate = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (!envelopeUpdate.hidden.includes("H02")) throw new Error("Updated envelope did not allow H02 to be discovered");
   await loadSave(logic, {
     section: "evidence",
     unlockedCases: ["04", "00", "01", "03", "05"],
@@ -372,17 +416,21 @@ async function loadSave(page, partial) {
   if (!stageOneLine.includes("索引发生变化") || stageOneLine.includes("失联人员")) throw new Error(`CASE05 update notification leaked its answer: ${stageOneLine}`);
   await click(logic, '[data-section="cases"]');
   if (!(await logic.locator("[data-case='05']").innerText()).includes("UPDATE")) throw new Error("CASE05 stage 1 card was not marked UPDATE");
-  await click(logic, '[data-case="05"]');
-  await click(logic, "[data-close-modal]");
   await click(logic, '[data-section="evidence"]');
   await click(logic, '[data-select-clue="ame_report"]');
   await click(logic, '[data-select-clue="extra_member"]');
   await click(logic, '[data-select-clue="facility"]');
   await click(logic, "[data-combine]");
   stagedCase = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
-  if (stagedCase.case05Stage !== 2) throw new Error(`CASE05 did not advance to stage 2 on a later event: ${stagedCase.case05Stage}`);
-  if (!stagedCase.attention.includes("cases:05")) throw new Error("CASE05 stage 2 did not mark its renewed update");
+  if (stagedCase.case05Stage !== 1 || stagedCase.case05SeenStage !== 0) throw new Error(`CASE05 skipped an unseen stage 1 after later evidence: ${JSON.stringify({ stage: stagedCase.case05Stage, seen: stagedCase.case05SeenStage })}`);
   await click(logic, '[data-section="cases"]');
+  await click(logic, '[data-case="05"]');
+  if (!(await logic.locator("#modal-content").innerText()).includes("失联人员：1")) throw new Error("CASE05 stage 1 was not available to witness before stage 2");
+  await click(logic, "[data-close-modal]");
+  await logic.waitForTimeout(1100);
+  stagedCase = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
+  if (stagedCase.case05Stage !== 2 || stagedCase.case05SeenStage !== 1) throw new Error(`CASE05 did not queue stage 2 after stage 1 was viewed: ${JSON.stringify({ stage: stagedCase.case05Stage, seen: stagedCase.case05SeenStage })}`);
+  if (!stagedCase.attention.includes("cases:05")) throw new Error("CASE05 stage 2 did not mark its renewed update");
   if (!(await logic.locator("[data-case='05']").innerText()).includes("UPDATE")) throw new Error("CASE05 stage 2 card was not marked UPDATE");
 
   for (const checkpoint of [
@@ -458,6 +506,7 @@ async function loadSave(page, partial) {
     evidence: ["EV01", "EV10", "EV02", "EV04", "EV07", "EV08", "EV16", "EV18"],
     clues: ["photo_seventh", "guowen_red_scarf"],
     hidden: [],
+    hypotheses: ["HX02"],
     finalChoices: []
   })));
   await logic.reload({ waitUntil: "domcontentloaded" });
@@ -473,9 +522,15 @@ async function loadSave(page, partial) {
   await click(logic, '[data-close-modal]');
   await click(logic, '[data-section="photos"]');
   await click(logic, '[data-clue="photo_1976_boy"]');
+  await logic.evaluate(() => document.querySelectorAll(".toast").forEach(node => node.remove()));
   await click(logic, '[data-compare-1976]');
+  const immediate1976 = await logic.locator("#toast-region").innerText();
+  if (!immediate1976.includes("异常档案已记录") || immediate1976.includes("暂定推论已推翻") || immediate1976.includes("跨年代对比完成")) throw new Error(`1976 reveal did not preserve its immediate pause: ${immediate1976}`);
   rescueState = await logic.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")));
   if (!rescueState.hidden.includes("H01")) throw new Error("1976 rescue flow did not grant H01 after manual comparison");
+  if (!rescueState.overturned.includes("HX02")) throw new Error("1976 reveal did not immediately update the contradicted hypothesis state");
+  await logic.waitForTimeout(1500);
+  if (!(await logic.locator("#toast-region").innerText()).includes("暂定推论已推翻")) throw new Error("1976 follow-up interpretation did not arrive after the reveal pause");
   await click(logic, '[data-section="final"]');
   await click(logic, '[data-review-final="1976"]');
   if (!(await logic.locator(".action-result").innerText()).includes("完成了旧照对比")) throw new Error("Reopened 1976 file did not reflect the later H01 comparison");
@@ -560,6 +615,13 @@ async function loadSave(page, partial) {
   await mobile.evaluate(() => document.querySelectorAll(".toast").forEach(node => node.remove()));
   await mobile.waitForTimeout(250);
   await mobile.screenshot({ path: path.join(root, "smoke-mobile.png"), fullPage: true });
+  await loadSave(mobile, { section: "archive", unlockedCases: ["04", "03"], unlockedSystems: ["photos", "evidence"] });
+  await click(mobile, '[data-doc="crew"]');
+  const mobileCrewLines = mobile.locator(".document-fact-lines p");
+  if (await mobileCrewLines.count() !== 3) throw new Error("Mobile crew record did not preserve three independent evidence rows");
+  const mobileCrewBox = await mobileCrewLines.first().boundingBox();
+  await mobile.touchscreen.tap(mobileCrewBox.x + 8, mobileCrewBox.y + mobileCrewBox.height / 2);
+  if (!(await mobile.evaluate(() => JSON.parse(localStorage.getItem("snowline-below-save-v2")).clues.includes("team_six")))) throw new Error("Mobile semantic evidence row did not provide a forgiving full-row target");
   await mobileContext.close();
 
   if (errors.length) throw new Error(errors.join("\n"));
